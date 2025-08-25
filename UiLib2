@@ -1077,3 +1077,5 @@ game:GetService("UserInputService").InputBegan:Connect(function(input, gameproce
 		end
 	end
 end)
+
+return UILibrary
