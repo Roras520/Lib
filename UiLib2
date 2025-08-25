@@ -883,13 +883,13 @@ function UILibrary.CreateRGBPicker(Section, PickerText, DefaultColor, Callback)
 			PickerWindow.Visible = true
 			local AbsolutePosition = OpenToggle.AbsolutePosition
 			local TargetPosition = UDim2.new(0, AbsolutePosition.X, 0, AbsolutePosition.Y + OpenToggle.AbsoluteSize.Y + 2)
-			PickerWindow.Position = UDim2.new(TargetPosition.X.Scale, TargetPosition.X.Offset, TargetPosition.Y.Scale, TargetPosition.Y.Offset - 20)
+			PickerWindow.Position = UDim2.new(TargetPosition.X.Scale, TargetPosition.X.Offset + 79.3, TargetPosition.Y.Scale, TargetPosition.Y.Offset)
 
 			TweenService:Create(PickerWindow, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 170, 0, 123)}):Play()
 
 			game:GetService("RunService"):BindToRenderStep("RGBPicker", Enum.RenderPriority.Input.Value, function()
 				local AbsolutePosition = OpenToggle.AbsolutePosition
-				local TargetPosition = UDim2.new(0, AbsolutePosition.X, 0, AbsolutePosition.Y + OpenToggle.AbsoluteSize.Y + 5)
+				local TargetPosition = UDim2.new(0, AbsolutePosition.X + 79.3, 0, AbsolutePosition.Y)
 				PickerWindow.Position = TargetPosition
 			end)
 		else
