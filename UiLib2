@@ -1060,7 +1060,7 @@ function UILibrary.AddDropdown(Section, DropdownText, Options, DefaultOption, Ca
 
 			game:GetService("RunService"):BindToRenderStep("DropdownPosition", Enum.RenderPriority.Input.Value, function()
 				local AbsolutePosition = ToggleButton.AbsolutePosition
-				local TargetPosition = UDim2.new(0, AbsolutePosition.X, 0, AbsolutePosition.Y + ToggleButton.AbsoluteSize.Y + 2)
+				local TargetPosition = UDim2.new(0, AbsolutePosition.X + 65, 0, AbsolutePosition.Y)
 				OptionContainer.Position = TargetPosition
 			end)
 		else
@@ -1147,6 +1147,33 @@ UILibrary.AddUiConfigurationTab = function(UI)
 		end
 	end)
 end
+
+-- Create a new UI instance
+local UI = UILibrary.new("MyUI", "Settings", "v1.0", Color3.fromRGB(100, 150, 200))
+
+-- Create a tab and section
+local Tab = UI:CreateTab("Preferences")
+local Section = UI.CreateSection(Tab, "User Options")
+
+-- Create a dropdown
+local Dropdown = UI.AddDropdown(
+	Section,
+	"Target Part",
+	{"Easy", "Normal", "Hard", "Expert"},
+	"Normal",
+	function(selectedOption)
+		print("Selected game mode: " .. selectedOption)
+	end
+)
+
+UI.AddUiConfigurationTab(UI)
+
+-- Programmatically change the dropdown selection
+Dropdown.Set("Hard") -- Sets the dropdown to "Hard"
+
+-- Get the current selection
+local currentMode = Dropdown.Get()
+print("Current game mode: " .. currentMode) -- Outputs: Current game mode: Hard
 
 local InfoBubble = Instance.new("ScreenGui")
 InfoBubble.Name = "InfoBubble"
