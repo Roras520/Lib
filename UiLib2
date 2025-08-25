@@ -746,7 +746,7 @@ function UILibrary.AddRGBPicker(Section, PickerText, DefaultColor, Callback)
 	local RGBPickerScreenGui = Instance.new("ScreenGui")
 	RGBPickerScreenGui.Name = "RGBPickerScreenGui"
 	RGBPickerScreenGui.ResetOnSpawn = false
-	RGBPickerScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+	RGBPickerScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
 	local PickerWindow = Instance.new("Frame")
 	PickerWindow.Name = "RGBPickerWindow"
@@ -1010,7 +1010,7 @@ function UILibrary.AddDropdown(Section, DropdownText, Options, DefaultOption, Ca
 
 	local DropdownScreenGui = Instance.new("ScreenGui")
 	DropdownScreenGui.Name = "DropdownScreenGui"
-	DropdownScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+	DropdownScreenGui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 	DropdownScreenGui.ResetOnSpawn = false
 
 	local OptionContainer = Instance.new("Frame")
