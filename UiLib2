@@ -969,6 +969,150 @@ function UILibrary.AddBind(Section, Title, Default, Callback)
 	end)
 end
 
+function UILibrary.AddDropdown(Section, DropdownText, Options, DefaultOption, Callback)
+	local Dropdown = {}
+	local CurrentOption = DefaultOption or Options[1]
+	local IsOpen = false
+
+	local DropdownFrame = Instance.new("Frame")
+	DropdownFrame.Name = "DropdownFrame"
+	DropdownFrame.Parent = Section.ElementContainer
+	DropdownFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+	DropdownFrame.BorderSizePixel = 0
+	DropdownFrame.Size = UDim2.new(1, -10, 0, 37)
+
+	local DropdownCorner = Utils.Corner(DropdownFrame, UDim.new(0, 5))
+
+	local DropdownLabel = Instance.new("TextButton")
+	DropdownLabel.Name = "DropdownLabel"
+	DropdownLabel.Parent = DropdownFrame
+	DropdownLabel.BackgroundTransparency = 1
+	DropdownLabel.BorderSizePixel = 0
+	DropdownLabel.Position = UDim2.new(0.028, 0, 0, 0)
+	DropdownLabel.Size = UDim2.new(0.8, 0, 1, 0)
+	DropdownLabel.Font = Enum.Font.SourceSans
+	DropdownLabel.Text = DropdownText .. ": " .. CurrentOption
+	DropdownLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	DropdownLabel.TextSize = 14
+	DropdownLabel.TextXAlignment = Enum.TextXAlignment.Left
+	DropdownLabel.Active = false
+
+	local ToggleButton = Instance.new("TextButton")
+	ToggleButton.Name = "ToggleButton"
+	ToggleButton.Parent = DropdownFrame
+	ToggleButton.BackgroundTransparency = 1
+	ToggleButton.Position = UDim2.new(0.9, 0, 0, 0)
+	ToggleButton.Size = UDim2.new(0, 30, 0, 37)
+	ToggleButton.Font = Enum.Font.SourceSansBold
+	ToggleButton.Text = "˅"
+	ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+	ToggleButton.TextSize = 14
+
+	local DropdownScreenGui = Instance.new("ScreenGui")
+	DropdownScreenGui.Name = "DropdownScreenGui"
+	DropdownScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+	DropdownScreenGui.ResetOnSpawn = false
+
+	local OptionContainer = Instance.new("Frame")
+	OptionContainer.Name = "OptionContainer"
+	OptionContainer.Parent = DropdownScreenGui
+	OptionContainer.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+	OptionContainer.BorderSizePixel = 0
+	OptionContainer.Size = UDim2.new(0, 150, 0, 0)
+	OptionContainer.ClipsDescendants = true
+	OptionContainer.Visible = false
+
+	local OptionListLayout = Instance.new("UIListLayout")
+	OptionListLayout.Parent = OptionContainer
+	OptionListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+	OptionListLayout.Padding = UDim.new(0, 2)
+	OptionListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+
+	local OptionPadding = Instance.new("UIPadding")
+	OptionPadding.Parent = OptionContainer
+	OptionPadding.PaddingTop = UDim.new(0, 2)
+	OptionPadding.PaddingBottom = UDim.new(0, 2)
+	OptionPadding.PaddingLeft = UDim.new(0, 5)
+	OptionPadding.PaddingRight = UDim.new(0, 5)
+
+	local OptionCorner = Utils.Corner(OptionContainer, UDim.new(0, 5))
+	local OptionStroke = Utils.Stroke(OptionContainer, Color3.fromRGB(45, 45, 45), nil, 0.8, "B")
+
+	local function UpdateDropdown()
+		DropdownLabel.Text = DropdownText .. ": " .. CurrentOption
+		if Callback then
+			Callback(CurrentOption)
+		end
+	end
+
+	local function ToggleDropdown()
+		IsOpen = not IsOpen
+		ToggleButton.Text = IsOpen and "˄" or "˅"
+		OptionContainer.Visible = IsOpen
+
+		if IsOpen then
+			local AbsolutePosition = ToggleButton.AbsolutePosition
+			local TargetPosition = UDim2.new(0, AbsolutePosition.X, 0, AbsolutePosition.Y + ToggleButton.AbsoluteSize.Y + 2)
+			OptionContainer.Position = TargetPosition
+
+			local targetHeight = #Options * 27 + 4
+			TweenService:Create(OptionContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 150, 0, targetHeight)}):Play()
+
+			game:GetService("RunService"):BindToRenderStep("DropdownPosition", Enum.RenderPriority.Input.Value, function()
+				local AbsolutePosition = ToggleButton.AbsolutePosition
+				local TargetPosition = UDim2.new(0, AbsolutePosition.X, 0, AbsolutePosition.Y + ToggleButton.AbsoluteSize.Y + 2)
+				OptionContainer.Position = TargetPosition
+			end)
+		else
+			game:GetService("RunService"):UnbindFromRenderStep("DropdownPosition")
+			TweenService:Create(OptionContainer, TweenInfo.new(0.3, Enum.EasingStyle.Quint), {Size = UDim2.new(0, 150, 0, 0)}):Play()
+			task.delay(0.3, function()
+				if not IsOpen then
+					OptionContainer.Visible = false
+				end
+			end)
+		end
+	end
+
+	for _, option in ipairs(Options) do
+		local OptionButton = Instance.new("TextButton")
+		OptionButton.Name = option
+		OptionButton.Parent = OptionContainer
+		OptionButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+		OptionButton.BorderSizePixel = 0
+		OptionButton.Size = UDim2.new(1, -10, 0, 25)
+		OptionButton.Font = Enum.Font.SourceSans
+		OptionButton.Text = option
+		OptionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+		OptionButton.TextSize = 14
+		Utils.Corner(OptionButton, UDim.new(0, 5))
+
+		OptionButton.MouseButton1Click:Connect(function()
+			CurrentOption = option
+			UpdateDropdown()
+			ToggleDropdown()
+		end)
+	end
+
+	DropdownLabel.MouseButton1Click:Connect(ToggleDropdown)
+	ToggleButton.MouseButton1Click:Connect(ToggleDropdown)
+
+	Dropdown.Set = function(value)
+		if table.find(Options, value) then
+			CurrentOption = value
+			UpdateDropdown()
+		end
+	end
+
+	Dropdown.Get = function()
+		return CurrentOption
+	end
+
+	Dropdown.Set(DefaultOption or Options[1])
+
+	return Dropdown
+end
+
 UILibrary.AddUiConfigurationTab = function(UI)
 	local Tab2 = UI:CreateTab("UI")
 
@@ -999,17 +1143,10 @@ UILibrary.AddUiConfigurationTab = function(UI)
 	UIS.InputBegan:Connect(function(input, gameprocessed)
 		if gameprocessed then return end
 		if input.KeyCode == Enum.KeyCode.V then
-			UILibrary.Main.Visible = not UI.Main.Visible
+			UI.Main.Visible = not UI.Main.Visible
 		end
 	end)
 end
-
-UIS.InputBegan:Connect(function(input, gameprocessed)
-	if gameprocessed then return end
-	if input.KeyCode == Enum.KeyCode.V then
-		UILibrary.Main.Visible = not UI.Main.Visible
-	end
-end)
 
 local InfoBubble = Instance.new("ScreenGui")
 InfoBubble.Name = "InfoBubble"
@@ -1050,7 +1187,7 @@ game:GetService("RunService"):BindToRenderStep("BubbleInfo", 1, function()
 	if CurrentTime - LastBubbleUpdateTime >= 1 then
 		FPS = math.floor(1 / game:GetService("RunService").RenderStepped:Wait())
 		Ping = math.floor(LocalPlayer:GetNetworkPing())
-		TextLabel.Text = string.format(UI.Title.. " - " .. UI.Version .. " | " .. "FPS: %d | Ping: %d ms", FPS, Ping)
+		TextLabel.Text = string.format(self.Title.. " - " .. self.Version .. " | " .. "FPS: %d | Ping: %d ms", FPS, Ping)
 
 		LastBubbleUpdateTime = CurrentTime
 	end
