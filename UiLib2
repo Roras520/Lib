@@ -111,6 +111,7 @@ function UILibrary.new(TitleText, SideTitleText, Version, AccentColor)
 	self.Version = Version
 	self.Title = TitleText
 	self.SideTitle = SideTitleText
+	self.ToggleVisibilityKey = Enum.KeyCode.V
 
 	local UILibScreenGui = Instance.new("ScreenGui")
 	UILibScreenGui.Name = "UILibScreenGui"
@@ -888,7 +889,7 @@ function UILibrary.CreateRGBPicker(Section, PickerText, DefaultColor, Callback)
 
 			game:GetService("RunService"):BindToRenderStep("RGBPicker", Enum.RenderPriority.Input.Value, function()
 				local AbsolutePosition = OpenToggle.AbsolutePosition
-				local TargetPosition = UDim2.new(0, AbsolutePosition.X, 0, AbsolutePosition.Y + OpenToggle.AbsoluteSize.Y + 2)
+				local TargetPosition = UDim2.new(0, AbsolutePosition.X, 0, AbsolutePosition.Y + OpenToggle.AbsoluteSize.Y + 5)
 				PickerWindow.Position = TargetPosition
 			end)
 		else
@@ -968,38 +969,45 @@ function UILibrary.AddBind(Section, Title, Default, Callback)
 	end)
 end
 
-local UI = UILibrary.new("Untitled PC", "Universal", "V1", Color3.fromRGB(120, 120, 120))
+UILibrary.AddUiConfigurationTab = function(UI)
+	local Tab2 = UI:CreateTab("UI")
 
-local Tab2 = UI:CreateTab("UI")
+	local Section1 = UI.CreateSection(Tab2, "Options")
 
-local Section1 = UI.CreateSection(Tab2, "Options")
+	local testrgbvalue = Color3.fromRGB(77, 0, 0)
 
-local testslidervalue = 33
+	UI.CreateRGBPicker(Section1, "Change Accent Color", testrgbvalue, function(colorval)
+		UI:SetAccentColor(colorval)
+		OriginalAccent = colorval
+	end)
 
-UI.CreateSlider(Section1, "Test Slider", testslidervalue, 0, 50, 4, testslidervalue, function(val)
-	print("slider val: ",tostring(val))
-end)
+	UI.AddToggle(Section1, "Rainbow Accent(Expensive)", function(Enabled)
+		OriginalAccent = self.AccentColor
+		if Enabled then
+			game:GetService("RunService"):BindToRenderStep("RainbowAccent", Enum.RenderPriority.Last.Value, function()
+				local t = tick() * 2
+				local r = math.sin(t) * 127 + 128
+				local g = math.sin(t + 2) * 127 + 128
+				local b = math.sin(t + 4) * 127 + 128
+				UI:SetAccentColor(Color3.fromRGB(r, g, b))
+			end)
+		else
+			game:GetService("RunService"):UnbindFromRenderStep("RainbowAccent")
+			UI:SetAccentColor(OriginalAccent)
+		end
+	end)
+	UIS.InputBegan:Connect(function(input, gameprocessed)
+		if gameprocessed then return end
+		if input.KeyCode == Enum.KeyCode.V then
+			UILibrary.Main.Visible = not UI.Main.Visible
+		end
+	end)
+end
 
-local testrgbvalue = Color3.fromRGB(77, 0, 0)
-
-UI.CreateRGBPicker(Section1, "Change Accent Color", testrgbvalue, function(colorval)
-	UI:SetAccentColor(colorval)
-	OriginalAccent = colorval
-end)
-
-UI.AddToggle(Section1, "Rainbow Accent(Expensive)", function(Enabled)
-	OriginalAccent = self.AccentColor
-	if Enabled then
-		game:GetService("RunService"):BindToRenderStep("RainbowAccent", Enum.RenderPriority.Last.Value, function()
-			local t = tick() * 2
-			local r = math.sin(t) * 127 + 128
-			local g = math.sin(t + 2) * 127 + 128
-			local b = math.sin(t + 4) * 127 + 128
-			UI:SetAccentColor(Color3.fromRGB(r, g, b))
-		end)
-	else
-		game:GetService("RunService"):UnbindFromRenderStep("RainbowAccent")
-		UI:SetAccentColor(OriginalAccent)
+UIS.InputBegan:Connect(function(input, gameprocessed)
+	if gameprocessed then return end
+	if input.KeyCode == Enum.KeyCode.V then
+		UILibrary.Main.Visible = not UI.Main.Visible
 	end
 end)
 
