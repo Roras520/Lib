@@ -101,13 +101,13 @@ function UpdateVR()
 	for i = #NotificationState.Queue, 1, -1 do
 		if ct - NotificationState.Queue[i].time > NotificationLibrary.NotificationSettings.MessageLifetime then
 			table.remove(NotificationState.Queue, i)
-			NotificationState.NotificationCount -= 1
+			NotificationState.ActiveCount -= 1
 		end
 	end
 
 	while #NotificationState.Queue > NotificationLibrary.NotificationSettings.MaxNotifications do
 		table.remove(NotificationState.Queue, 1)
-		NotificationState.NotificationCount -= 1
+		NotificationState.ActiveCount -= 1
 	end
 
 	local lines = {}
@@ -212,10 +212,10 @@ local function SendPC(message, titleText)
 	NotificationState.ActiveCount += 1
 
 	task.delay(NotificationLibrary.NotificationSettings.MessageLifetime, function()
-        if Frame.Parent then
-            FadeOutNotification(Frame, Title, Message, Button, UIStroke)
-        end
-    end)
+		if Frame.Parent then
+			FadeOutNotification(Frame, Title, Message, Button, UIStroke)
+		end
+	end)
 end
 
 --// Library Functions
@@ -258,5 +258,3 @@ if VRService.VREnabled then
 end
 
 NotificationLibrary.SendNotification("Loaded notifications module.", "Notifications")
-
-return NotificationLibrary
