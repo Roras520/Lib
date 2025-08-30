@@ -20,7 +20,7 @@ if not LocalHead then
 end
 
 --// Settings
-local NotificationSettings = {
+local NotificationLibrary.NotificationSettings = {
 	MaxNotifications = 5,
 	Cooldown = 0.6,
 	MessageLifetime = 4,
@@ -57,7 +57,7 @@ VrPart.CanQuery = false
 VrPart.CanTouch = false
 VrPart.Massless = true
 VrPart.Transparency = 1
-VrPart.Size = NotificationSettings.SizeVR
+VrPart.Size = NotificationLibrary.NotificationSettings.SizeVR
 VrPart.Parent = workspace
 
 local VrGui = Instance.new("SurfaceGui")
@@ -68,9 +68,9 @@ VrGui.Parent = VrPart
 
 local VrText = Instance.new("TextLabel")
 VrText.BackgroundTransparency = VRService.VREnabled and 1 or 0.5
-VrText.TextColor3 = NotificationSettings.TextColor
-VrText.Font = NotificationSettings.Font
-VrText.TextSize = NotificationSettings.TextSizeVR
+VrText.TextColor3 = NotificationLibrary.NotificationSettings.TextColor
+VrText.Font = NotificationLibrary.NotificationSettings.Font
+VrText.TextSize = NotificationLibrary.NotificationSettings.TextSizeVR
 VrText.Size = UDim2.new(1, 0, 1, 0)
 VrText.TextYAlignment = Enum.TextYAlignment.Top
 VrText.Visible = false
@@ -83,13 +83,13 @@ PcGui.Parent = Cgui
 
 local PcFrame = Instance.new("Frame")
 PcFrame.BackgroundTransparency = 1
-PcFrame.Size = UDim2.new(0, 320, 0, 300 + 70 * NotificationSettings.MaxNotifications)
+PcFrame.Size = UDim2.new(0, 320, 0, 300 + 70 * NotificationLibrary.NotificationSettings.MaxNotifications)
 PcFrame.AnchorPoint = Vector2.new(1, 1)
 PcFrame.Position = UDim2.new(0.98, 0, 0.98, 0)
 PcFrame.Parent = PcGui
 
 local PcList = Instance.new("UIListLayout")
-PcList.Padding = UDim.new(0, NotificationSettings.SpacingPC)
+PcList.Padding = UDim.new(0, NotificationLibrary.NotificationSettings.SpacingPC)
 PcList.SortOrder = Enum.SortOrder.LayoutOrder
 PcList.VerticalAlignment = Enum.VerticalAlignment.Bottom
 PcList.HorizontalAlignment = Enum.HorizontalAlignment.Right
@@ -99,13 +99,13 @@ PcList.Parent = PcFrame
 function UpdateVR()
 	local ct = tick()
 	for i = #NotificationState.Queue, 1, -1 do
-		if ct - NotificationState.Queue[i].time > NotificationSettings.MessageLifetime then
+		if ct - NotificationState.Queue[i].time > NotificationLibrary.NotificationSettings.MessageLifetime then
 			table.remove(NotificationState.Queue, i)
 			NotificationState.NotificationCount -= 1
 		end
 	end
 
-	while #NotificationState.Queue > NotificationSettings.MaxNotifications do
+	while #NotificationState.Queue > NotificationLibrary.NotificationSettings.MaxNotifications do
 		table.remove(NotificationState.Queue, 1)
 		NotificationState.NotificationCount -= 1
 	end
@@ -118,8 +118,8 @@ function UpdateVR()
 end
 
 function SendVR(message)
-	if not (NotificationSettings.Enabled and VRService.VREnabled) then return end
-	if tick() - NotificationState.LastSendTime < NotificationSettings.Cooldown then return end
+	if not (NotificationLibrary.NotificationSettings.Enabled and VRService.VREnabled) then return end
+	if tick() - NotificationState.LastSendTime < NotificationLibrary.NotificationSettings.Cooldown then return end
 
 	NotificationState.LastSendTime = tick()
 	NotificationState.ActiveCount += 1
@@ -145,9 +145,9 @@ local function FadeOutNotification(Frame, Title, Message, Button, Stroke)
 end
 
 local function SendPC(message, titleText)
-	if not NotificationSettings.Enabled or VRService.VREnabled then return end
-	if tick() - NotificationState.LastSendTime < NotificationSettings.Cooldown then return end
-	if NotificationState.ActiveCount >= NotificationSettings.MaxNotifications then return end
+	if not NotificationLibrary.NotificationSettings.Enabled or VRService.VREnabled then return end
+	if tick() - NotificationState.LastSendTime < NotificationLibrary.NotificationSettings.Cooldown then return end
+	if NotificationState.ActiveCount >= NotificationLibrary.NotificationSettings.MaxNotifications then return end
 
 	local Frame = Instance.new("Frame")
 	Frame.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
@@ -211,7 +211,7 @@ local function SendPC(message, titleText)
 	NotificationState.LastSendTime = tick()
 	NotificationState.ActiveCount += 1
 
-	task.delay(NotificationSettings.MessageLifetime, function()
+	task.delay(NotificationLibrary.NotificationSettings.MessageLifetime, function()
         if Frame.Parent then
             FadeOutNotification(Frame, Title, Message, Button, UIStroke)
         end
@@ -237,17 +237,17 @@ end
 
 --// VR Setup
 if VRService.VREnabled and LocalHead then
-	VrPart.CFrame = LocalHead.CFrame * CFrame.new(NotificationSettings.VROffset)
+	VrPart.CFrame = LocalHead.CFrame * CFrame.new(NotificationLibrary.NotificationSettings.VROffset)
 
 	local Weld = Instance.new("Weld")
 	Weld.Name = "NotifWeld"
 	Weld.Part0 = LocalHead
 	Weld.Part1 = VrPart
-	Weld.C1 = CFrame.new(0, NotificationSettings.SpacingVR, 1)
+	Weld.C1 = CFrame.new(0, NotificationLibrary.NotificationSettings.SpacingVR, 1)
 	Weld.Parent = VrPart
 
 	VrPart.CFrame = CFrame.new(VrPart.Position, LocalHead.Position)
-	VrText.Visible = NotificationSettings.Enabled
+	VrText.Visible = NotificationLibrary.NotificationSettings.Enabled
 else
 	VrText.Visible = false
 end
