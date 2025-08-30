@@ -20,7 +20,7 @@ if not LocalHead then
 end
 
 --// Settings
-local NotificationLibrary.NotificationSettings = {
+NotificationLibrary.NotificationSettings = {
 	MaxNotifications = 5,
 	Cooldown = 0.6,
 	MessageLifetime = 4,
