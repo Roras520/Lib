@@ -1,0 +1,260 @@
+--// Library init
+local NotificationLibrary = {}
+NotificationLibrary.__index = NotificationLibrary
+
+--// Services
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local VRService = game:GetService("VRService")
+local RunService = game:GetService("RunService")
+
+--// Player & GUI References
+local LocalPlayer = Players.LocalPlayer
+local Cgui = RunService:IsStudio() and LocalPlayer.PlayerGui or game:GetService("CoreGui")
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local LocalHead = Character:FindFirstChild("Head")
+
+if not LocalHead then
+	warn("Head not found for notification weld")
+	return
+end
+
+--// Settings
+local NotificationSettings = {
+	MaxNotifications = 5,
+	Cooldown = 0.6,
+	MessageLifetime = 4,
+
+	SizePC = UDim2.new(0, 250, 0, 60),
+	SizeVR = Vector3.new(2, 1, 0.1),
+
+	TextColor = Color3.fromRGB(255, 255, 255),
+	Font = Enum.Font.Code,
+	TextSizePC = 28,
+	TextSizeVR = 30.47,
+
+	SpacingPC = 8,
+	SpacingVR = 0.75,
+
+	VROffset = Vector3.new(0, 1.06, 3),
+	UpdateInterval = 0.5,
+	Enabled = true,
+}
+
+--// State
+local NotificationState = {
+	Queue = {},
+	LastSendTime = 0,
+	ActiveCount = 0,
+}
+
+
+--// VR Notification Part
+local VrPart = Instance.new("Part")
+VrPart.Anchored = false
+VrPart.CanCollide = false
+VrPart.CanQuery = false
+VrPart.CanTouch = false
+VrPart.Massless = true
+VrPart.Transparency = 1
+VrPart.Size = NotificationSettings.SizeVR
+VrPart.Parent = workspace
+
+local VrGui = Instance.new("SurfaceGui")
+VrGui.Face = Enum.NormalId.Back
+VrGui.Adornee = VrPart
+VrGui.AlwaysOnTop = true
+VrGui.Parent = VrPart
+
+local VrText = Instance.new("TextLabel")
+VrText.BackgroundTransparency = VRService.VREnabled and 1 or 0.5
+VrText.TextColor3 = NotificationSettings.TextColor
+VrText.Font = NotificationSettings.Font
+VrText.TextSize = NotificationSettings.TextSizeVR
+VrText.Size = UDim2.new(1, 0, 1, 0)
+VrText.TextYAlignment = Enum.TextYAlignment.Top
+VrText.Visible = false
+VrText.Parent = VrGui
+
+--// PC Notification Container
+local PcGui = Instance.new("ScreenGui")
+PcGui.IgnoreGuiInset = true
+PcGui.Parent = Cgui
+
+local PcFrame = Instance.new("Frame")
+PcFrame.BackgroundTransparency = 1
+PcFrame.Size = UDim2.new(0, 320, 0, 300 + 70 * NotificationSettings.MaxNotifications)
+PcFrame.AnchorPoint = Vector2.new(1, 1)
+PcFrame.Position = UDim2.new(0.98, 0, 0.98, 0)
+PcFrame.Parent = PcGui
+
+local PcList = Instance.new("UIListLayout")
+PcList.Padding = UDim.new(0, NotificationSettings.SpacingPC)
+PcList.SortOrder = Enum.SortOrder.LayoutOrder
+PcList.VerticalAlignment = Enum.VerticalAlignment.Bottom
+PcList.HorizontalAlignment = Enum.HorizontalAlignment.Right
+PcList.Parent = PcFrame
+
+--// VR Functions
+function UpdateVR()
+	local ct = tick()
+	for i = #NotificationState.Queue, 1, -1 do
+		if ct - NotificationState.Queue[i].time > NotificationSettings.MessageLifetime then
+			table.remove(NotificationState.Queue, i)
+			NotificationState.NotificationCount -= 1
+		end
+	end
+
+	while #NotificationState.Queue > NotificationSettings.MaxNotifications do
+		table.remove(NotificationState.Queue, 1)
+		NotificationState.NotificationCount -= 1
+	end
+
+	local lines = {}
+	for _, entry in ipairs(NotificationState.Queue) do
+		table.insert(lines, entry.text)
+	end
+	VrText.Text = table.concat(lines, "\n")
+end
+
+function SendVR(message)
+	if not (NotificationSettings.Enabled and VRService.VREnabled) then return end
+	if tick() - NotificationState.LastSendTime < NotificationSettings.Cooldown then return end
+
+	NotificationState.LastSendTime = tick()
+	NotificationState.ActiveCount += 1
+
+	table.insert(NotificationState.Queue, { text = message, time = tick() })
+	UpdateVR()
+end
+
+--// PC Functions
+local function FadeOutNotification(Frame, Title, Message, Button, Stroke)
+	local info = TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
+
+	TweenService:Create(Frame, info, { Position = UDim2.new(1, 20, 0, 0), BackgroundTransparency = 1 }):Play()
+	TweenService:Create(Title, info, { TextTransparency = 1 }):Play()
+	TweenService:Create(Message, info, { TextTransparency = 1 }):Play()
+	TweenService:Create(Button, info, { TextTransparency = 1 }):Play()
+	if Stroke then TweenService:Create(Stroke, info, { Transparency = 1 }):Play() end
+
+	task.delay(info.Time, function()
+		Frame:Destroy()
+		NotificationState.ActiveCount -= 1
+	end)
+end
+
+local function SendPC(message, titleText)
+	if not NotificationSettings.Enabled or VRService.VREnabled then return end
+	if tick() - NotificationState.LastSendTime < NotificationSettings.Cooldown then return end
+	if NotificationState.ActiveCount >= NotificationSettings.MaxNotifications then return end
+
+	local Frame = Instance.new("Frame")
+	Frame.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
+	Frame.BorderSizePixel = 0
+	Frame.Position = UDim2.new(0.7, 0, 0.35, 0)
+	Frame.Size = UDim2.new(0, 238, 0, 70)
+	Frame.Parent = PcFrame
+
+	local UICorner = Instance.new("UICorner")
+	UICorner.Parent = Frame
+
+	local UIStroke = Instance.new("UIStroke")
+	UIStroke.Color = Color3.fromRGB(166, 166, 166)
+	UIStroke.Thickness = 0.8
+	UIStroke.Transparency = 0.22
+	UIStroke.Parent = Frame
+
+	local Title = Instance.new("TextLabel")
+	Title.Name = "Title"
+	Title.Parent = Frame
+	Title.BackgroundTransparency = 1
+	Title.Position = UDim2.new(0.06, 0, 0.1, 0)
+	Title.Size = UDim2.new(0, 124, 0, 26)
+	Title.Font = Enum.Font.SourceSansSemibold
+	Title.Text = titleText or "Title"
+	Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	Title.TextSize = 22
+	Title.TextXAlignment = Enum.TextXAlignment.Left
+
+	local Message = Instance.new("TextLabel")
+	Message.Name = "Message"
+	Message.Parent = Frame
+	Message.BackgroundTransparency = 1
+	Message.Position = UDim2.new(0.055, 0, 0.489, 0)
+	Message.Size = UDim2.new(0, 207, 0, 31)
+	Message.Font = Enum.Font.SourceSans
+	Message.Text = message
+	Message.TextColor3 = Color3.fromRGB(212, 212, 212)
+	Message.TextSize = 20
+	Message.TextXAlignment = Enum.TextXAlignment.Left
+	Message.TextYAlignment = Enum.TextYAlignment.Top
+
+	local Button = Instance.new("TextButton")
+	Button.Text = "×"
+	Button.BackgroundTransparency = 1
+	Button.TextColor3 = Color3.fromRGB(170, 170, 170)
+	Button.Font = Enum.Font.GothamBold
+	Button.TextSize = 18
+	Button.Size = UDim2.new(0, 20, 0, 20)
+	Button.Position = UDim2.new(1, -26, 0, 6)
+	Button.Parent = Frame
+
+	Button.MouseEnter:Connect(function() Button.TextColor3 = Color3.fromRGB(255, 255, 255) end)
+	Button.MouseLeave:Connect(function() Button.TextColor3 = Color3.fromRGB(170, 170, 170) end)
+
+	Button.MouseButton1Click:Connect(function()
+		PcGui:Destroy()
+		NotificationState.ActiveCount -= 1
+	end)
+
+	NotificationState.LastSendTime = tick()
+	NotificationState.ActiveCount += 1
+
+	task.delay(NotificationSettings.MessageLifetime, function()
+        if Frame.Parent then
+            FadeOutNotification(Frame, Title, Message, Button, UIStroke)
+        end
+    end)
+end
+
+--// Library Functions
+NotificationLibrary.SendNotification = function(message, titleText)
+	if VRService.VREnabled then
+		SendVR(message)
+	else
+		SendPC(message, titleText)
+	end
+end
+
+NotificationLibrary.ClearNotifications = function()
+	for _, child in ipairs(PcFrame:GetChildren()) do
+		if child:IsA("Frame") then
+			child:Destroy()
+		end
+	end
+end
+
+--// VR Setup
+if VRService.VREnabled and LocalHead then
+	VrPart.CFrame = LocalHead.CFrame * CFrame.new(NotificationSettings.VROffset)
+
+	local Weld = Instance.new("Weld")
+	Weld.Name = "NotifWeld"
+	Weld.Part0 = LocalHead
+	Weld.Part1 = VrPart
+	Weld.C1 = CFrame.new(0, NotificationSettings.SpacingVR, 1)
+	Weld.Parent = VrPart
+
+	VrPart.CFrame = CFrame.new(VrPart.Position, LocalHead.Position)
+	VrText.Visible = NotificationSettings.Enabled
+else
+	VrText.Visible = false
+end
+
+--// Update VR notifications
+if VRService.VREnabled then
+	RunService:BindToRenderStep("UpdateVRNotifications", 1, UpdateVR)
+end
+
+NotificationLibrary.SendNotification("Loaded notifications module.", "Notifications")
