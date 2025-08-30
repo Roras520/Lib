@@ -258,3 +258,5 @@ if VRService.VREnabled then
 end
 
 NotificationLibrary.SendNotification("Loaded notifications module.", "Notifications")
+
+return NotificationLibrary
