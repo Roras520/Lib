@@ -33,19 +33,20 @@ local VRUI = {
 function UILib:CreateWindow(Title, UseCoreGui, Size)
 	local ChosenGui = UseCoreGui and game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
-	-- Screen GUI Setup
 	local ScreenGui = Instance.new("ScreenGui")
 	ScreenGui.Name = "UI"
 	ScreenGui.Parent = ChosenGui
 	ScreenGui.ResetOnSpawn = false
 
-	-- VR Base Setup
+	local VRMenuParts = Instance.new("Folder", workspace)
+	VRMenuParts.Name = "VRMenuParts"
+
 	VRUI.Base = Instance.new("Part")
 	VRUI.Base.Size = Vector3.new(0.01, 0.01, 0.01)
 	VRUI.Base.Transparency = 1
 	VRUI.Base.CanCollide = false
 	VRUI.Base.Massless = true
-	VRUI.Base.Parent = workspace
+	VRUI.Base.Parent = VRMenuParts
 
 	local BaseWeld = Instance.new("Weld")
 	if workspace.CurrentCamera:FindFirstChild("VirtualHands") then
@@ -58,13 +59,12 @@ function UILib:CreateWindow(Title, UseCoreGui, Size)
 	BaseWeld.C1 = CFrame.new(0, -0.2, 0)
 	BaseWeld.Parent = VRUI.Base
 
-	-- VR Billboard Setup
 	VRUI.Billboard = Instance.new("Part")
 	VRUI.Billboard.Size = Vector3.new(1.1, 1, 0.01)
 	VRUI.Billboard.Transparency = 1
 	VRUI.Billboard.CanCollide = false
 	VRUI.Billboard.Massless = true
-	VRUI.Billboard.Parent = workspace
+	VRUI.Billboard.Parent = VRMenuParts
 
 	local MenuWeld = Instance.new("Weld")
 	MenuWeld.Part0 = VRUI.Base
@@ -72,7 +72,6 @@ function UILib:CreateWindow(Title, UseCoreGui, Size)
 	MenuWeld.C1 = CFrame.new(-0.17, -0.57, 0) * CFrame.Angles(math.rad(-90), math.rad(90), 0)
 	MenuWeld.Parent = VRUI.Billboard
 
-	-- Surface/Screen GUI Setup
 	local SurfaceGui
 	if VRService.VREnabled then
 		SurfaceGui = Instance.new("SurfaceGui", ChosenGui)
@@ -94,18 +93,16 @@ function UILib:CreateWindow(Title, UseCoreGui, Size)
 		MenuWeld.C1 = CFrame.new(0, 0.3, -0.5)
 	end
 
-	-- Main Frame Setup
 	local MainFrame = Instance.new("Frame")
 	MainFrame.Name = "Main"
 	MainFrame.Parent = SurfaceGui
 	MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 	MainFrame.BorderSizePixel = 0
-	MainFrame.Position = UDim2.new(0.5, -(Size.X / 2), 0, 100)
+	MainFrame.Position = UDim2.new(0.5, -(Size.X.Scale / 2), 0, 100)
 	MainFrame.Size = VRService.VREnabled and UDim2.new(1, 0, 1, 0) or Size
 	MainFrame.ClipsDescendants = true
 	CreateCorner(MainFrame, 8)
 
-	-- Title Bar Setup
 	local TitleBar = Instance.new("Frame")
 	TitleBar.Name = "TitleBar"
 	TitleBar.Parent = MainFrame
