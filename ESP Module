@@ -5,6 +5,7 @@ local VRService = game:GetService("VRService")
 
 local Config = {
     -- States
+	EspEnabled = true,
     BoxesOn = false,
 	NamesOn = false,
 	ChamsOn = false,
@@ -169,6 +170,7 @@ end
 
 local LastEspUpdate = 0
 function UpdateAllEsp()
+	if not Config.EspEnabled then return end
 	local CT = tick()
 	if CT - LastEspUpdate >= 2 then
 		for _, Plr in pairs(game.Players:GetPlayers()) do
