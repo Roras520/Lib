@@ -8,7 +8,7 @@ local Config = {
     BoxesOn = false,
 	NamesOn = false,
 	ChamsOn = false,
-	DotEsOn = false,
+	DotsOn = false,
 
     -- Colors
 	ChamsColor = Color3.fromRGB(0, 170, 255),
@@ -176,7 +176,7 @@ function UpdateAllEsp()
 				if Config.BoxesOn then CreateBoxEsp(Plr.Character) end
 				if Config.NamesOn then CreateNameEsp(Plr.Character:FindFirstChild("Head")) end
 				if Config.ChamsOn then CreateChamsHighlight(Plr.Character) end
-				if Config.DotEsOn then CreateDotEsp(Plr.Character) end
+				if Config.DotsOn then CreateDotEsp(Plr.Character) end
 			end
 		end
 		LastEspUpdate = CT
