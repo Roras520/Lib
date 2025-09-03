@@ -29,6 +29,9 @@ local VRUI = {
 	Billboard = nil
 }
 
+local VRMenuParts = Instance.new("Folder", workspace)
+VRMenuParts.Name = "VRMenuParts"
+
 function UILib:CreateWindow(Title, UseCoreGui, Size)
 	local ChosenGui = UseCoreGui and game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
@@ -36,9 +39,6 @@ function UILib:CreateWindow(Title, UseCoreGui, Size)
 	ScreenGui.Name = "UI"
 	ScreenGui.Parent = ChosenGui
 	ScreenGui.ResetOnSpawn = false
-
-	local VRMenuParts = Instance.new("Folder", workspace)
-	VRMenuParts.Name = "VRMenuParts"
 
 	VRUI.Base = Instance.new("Part")
 	VRUI.Base.Size = Vector3.new(0.01, 0.01, 0.01)
