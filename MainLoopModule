@@ -39,7 +39,7 @@ TimedLoopModule.TogglePauseLoop = function(name, paused)
 	end
 end
 
-RunService.Heartbeat:Connect(function()
+game:GetService("RunService").Heartbeat:Connect(function()
 	local CurrentTime = tick()
 	for _, loop in ipairs(ActiveLoops) do
 		if CurrentTime - loop.Last >= loop.Interval and not loop.IsPaused then
