@@ -102,7 +102,7 @@ PcList.Parent = PcFrame
 function UpdateVR()
 	local ct = tick()
 	for i = #NotificationState.Queue, 1, -1 do
-		if ct - NotificationState.Queue[i].time > NotificationSettings.MessageLifetime then
+		if NotificationState.Queue[i] and ct - NotificationState.Queue[i].time > NotificationSettings.MessageLifetime then
 			table.remove(NotificationState.Queue, i)
 			NotificationState.ActiveCount -= 1
 		end
