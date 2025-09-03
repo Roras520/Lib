@@ -101,14 +101,19 @@ PcList.Parent = PcFrame
 --// VR Functions
 function UpdateVR()
 	local ct = tick()
+	local settings = NotificationSettings or {}
+
+	local lifetime = settings.MessageLifetime or 4
+	local maxNotifs = settings.MaxNotifications or 5
+
 	for i = #NotificationState.Queue, 1, -1 do
-		if NotificationState.Queue[i] and ct - NotificationState.Queue[i].time > NotificationSettings.MessageLifetime then
+		if NotificationState.Queue[i] and ct - NotificationState.Queue[i].time > lifetime then
 			table.remove(NotificationState.Queue, i)
 			NotificationState.ActiveCount -= 1
 		end
 	end
 
-	while #NotificationState.Queue > NotificationSettings.MaxNotifications do
+	while #NotificationState.Queue > maxNotifs do
 		table.remove(NotificationState.Queue, 1)
 		NotificationState.ActiveCount -= 1
 	end
@@ -148,9 +153,10 @@ local function FadeOutNotification(Frame, Title, Message, Button, Stroke)
 end
 
 local function SendPC(message, titleText)
-	if not NotificationSettings.Enabled or VRService.VREnabled then return end
-	if tick() - NotificationState.LastSendTime < NotificationSettings.Cooldown then return end
-	if NotificationState.ActiveCount >= NotificationSettings.MaxNotifications then return end
+	local settings = NotificationSettings or {}
+	if not (settings.Enabled ~= false) or VRService.VREnabled then return end
+	if tick() - NotificationState.LastSendTime < (settings.Cooldown or 0.6) then return end
+	if NotificationState.ActiveCount >= (settings.MaxNotifications or 5) then return end
 
 	local Frame = Instance.new("Frame")
 	Frame.BackgroundColor3 = Color3.fromRGB(26, 26, 26)
@@ -214,7 +220,7 @@ local function SendPC(message, titleText)
 	NotificationState.LastSendTime = tick()
 	NotificationState.ActiveCount += 1
 
-	task.delay(NotificationSettings.MessageLifetime, function()
+	task.delay(settings.MessageLifetime or 4, function()
 		if Frame.Parent then
 			FadeOutNotification(Frame, Title, Message, Button, UIStroke)
 		end
