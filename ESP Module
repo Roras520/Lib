@@ -6,7 +6,7 @@ local VRService = game:GetService("VRService")
 local Config = {
     -- States
     BoxesOn = false,
-	NameEsOn = false,
+	NamesOn = false,
 	ChamsOn = false,
 	DotEsOn = false,
 
@@ -174,7 +174,7 @@ function UpdateAllEsp()
 		for _, Plr in pairs(game.Players:GetPlayers()) do
 			if Plr.Name ~= LocalPlayerName and Plr.Character then
 				if Config.BoxesOn then CreateBoxEsp(Plr.Character) end
-				if Config.NameEsOn then CreateNameEsp(Plr.Character:FindFirstChild("Head")) end
+				if Config.NamesOn then CreateNameEsp(Plr.Character:FindFirstChild("Head")) end
 				if Config.ChamsOn then CreateChamsHighlight(Plr.Character) end
 				if Config.DotEsOn then CreateDotEsp(Plr.Character) end
 			end
@@ -192,6 +192,11 @@ function EditConfig(option, value)
 	end
 end
 
+function GetConfig()
+    return Config
+end
+
+EspModule.GetConfig = GetConfig
 EspModule.EditConfig = EditConfig
 EspModule.UpdateAllEsp = UpdateAllEsp
 EspModule.ClearEsp = ClearEsp
