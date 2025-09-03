@@ -23,7 +23,6 @@ end
 -- UI Library
 local UILib = {}
 
--- VR UI Setup
 local VRUI = {
 	Background = nil,
 	Base = nil,
