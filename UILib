@@ -997,6 +997,9 @@ function UILib:CreateWindow(Title, UseCoreGui, Size)
 					InputConnection = UserInputService.InputBegan:Connect(function(Input, GameProcessed)
 						if GameProcessed then return end
 						ChosenInput = Input.KeyCode
+						if Input.KeyCode.Name == "Unknown" then
+							ChosenInput = Enum.KeyCode.ButtonR2
+						end
 						if Callback then Callback(ChosenInput) end
 						BindButton.Text = ChosenInput.Name
 						InputConnection:Disconnect()
