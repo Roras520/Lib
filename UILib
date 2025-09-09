@@ -201,31 +201,32 @@ function UILib:CreateWindow(Title, UseCoreGui, Size)
 	ContentPadding.PaddingLeft = UDim.new(0, 15)
 	ContentPadding.PaddingRight = UDim.new(0, 15)
 
-	-- Dragging Functionality
-	local Dragging = false
-	local DragStart = nil
-	local StartPos = nil
+	if not VRService.VREnabled then
+		local Dragging = false
+		local DragStart = nil
+		local StartPos = nil
 
-	TitleBar.InputBegan:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-			Dragging = true
-			DragStart = Input.Position
-			StartPos = MainFrame.Position
-		end
-	end)
+		TitleBar.InputBegan:Connect(function(Input)
+			if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+				Dragging = true
+				DragStart = Input.Position
+				StartPos = MainFrame.Position
+			end
+		end)
 
-	UserInputService.InputChanged:Connect(function(Input)
-		if Dragging and Input.UserInputType == Enum.UserInputType.MouseMovement then
-			local Delta = Input.Position - DragStart
-			MainFrame.Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + Delta.X, StartPos.Y.Scale, StartPos.Y.Offset + Delta.Y)
-		end
-	end)
+		UserInputService.InputChanged:Connect(function(Input)
+			if Dragging and Input.UserInputType == Enum.UserInputType.MouseMovement then
+				local Delta = Input.Position - DragStart
+				MainFrame.Position = UDim2.new(StartPos.X.Scale, StartPos.X.Offset + Delta.X, StartPos.Y.Scale, StartPos.Y.Offset + Delta.Y)
+			end
+		end)
 
-	UserInputService.InputEnded:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-			Dragging = false
-		end
-	end)
+		UserInputService.InputEnded:Connect(function(Input)
+			if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+				Dragging = false
+			end
+		end)
+	end
 
 	-- Window Management
 	local Tabs = {}
