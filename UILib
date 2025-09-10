@@ -32,12 +32,19 @@ local VRUI = {
 local VRMenuParts = Instance.new("Folder", workspace)
 VRMenuParts.Name = "VRMenuParts"
 
+local UIFolder = Instance.new("Folder", workspace)
+UIFolder.Name = "UIFolder"
+
+local DropdownFolder = Instance.new("Folder", UIFolder)
+DropdownFolder.Name = "UIDropdowns"
+
 function UILib:CreateWindow(Title, UseCoreGui, Size)
 	local ChosenGui = UseCoreGui and game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
+	UIFolder.Parent = ChosenGui
 
 	local ScreenGui = Instance.new("ScreenGui")
-	ScreenGui.Name = "UI"
-	ScreenGui.Parent = ChosenGui
+	ScreenGui.Name = "MainUIScreenGui"
+	ScreenGui.Parent = UIFolder
 	ScreenGui.ResetOnSpawn = false
 
 	VRUI.Base = Instance.new("Part")
@@ -849,7 +856,7 @@ function UILib:CreateWindow(Title, UseCoreGui, Size)
 
 				local DropdownScreenGui = Instance.new("ScreenGui")
 				DropdownScreenGui.Name = "DropdownScreenGui"
-				DropdownScreenGui.Parent = ChosenGui
+				DropdownScreenGui.Parent = DropdownFolder
 				DropdownScreenGui.ResetOnSpawn = false
 				DropdownScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 				DropdownScreenGui.DisplayOrder = 10
@@ -1016,6 +1023,34 @@ function UILib:CreateWindow(Title, UseCoreGui, Size)
 		end
 
 		return Tab
+	end
+
+	function Window:Destroy()
+		RunService:UnbindFromRenderStep("DropdownPosition")
+		
+		if self.TabLayout then
+			self.TabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Disconnect()
+		end
+		if self.ContentLayout then
+			self.ContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Disconnect()
+		end
+		
+		if UIFolder then
+			UIFolder:Destroy()
+		end
+		if VRMenuParts then
+			VRMenuParts:Destroy()
+		end
+		if DropdownFolder then
+			DropdownFolder:Destroy()
+		end
+		
+		self.Tabs = nil
+		self.TabContainer = nil
+		self.TabLayout = nil
+		self.ContentContainer = nil
+		self.ContentLayout = nil
+		self.Main = nil
 	end
 
 	return Window
