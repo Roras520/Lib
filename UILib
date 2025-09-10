@@ -20,7 +20,6 @@ local function CreateStroke(Parent, Color, Thickness, Transparency)
 	Stroke.Transparency = Transparency or 0
 end
 
--- UI Library
 local UILib = {}
 
 local VRUI = {
