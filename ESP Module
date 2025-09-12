@@ -20,32 +20,51 @@ local Config = {
 
 local LocalPlayer = Players.LocalPlayer
 local LocalPlayerName = LocalPlayer.Name
+local RedC = Color3.fromRGB(255, 0, 0)
+
+-- Helper Functions
+function ColorCheck(Player, EnemyColor, FriendlyColor)
+	if workspace:FindFirstChild("PowerUps") and game.GameId == 7406004869 then
+		return (Player:GetAttribute("ModeTeam") == "Traitor") and EnemyColor or FriendlyColor
+	elseif LocalPlayer.Team and Player.Team then
+		return (LocalPlayer.Team.Name ~= Player.Team) and EnemyColor or FriendlyColor
+	else
+		return FriendlyColor
+	end
+end
+
+function ColorMinus(Color, Step)
+	return Color3.fromRGB(Color.R - Step, Color.G - Step, Color.B - Step)
+end
 
 -- ESP Functions
 function CreateChamsHighlight(Character)
 	local Player = game.Players:GetPlayerFromCharacter(Character)
+	local ChamsColor = ColorCheck(Player, RedC, Config.ChamsColor)
+	local ChamsOutlineColor = ColorMinus(ChamsColor, 15)
 	if not Player then return end
 
 	local Existing = Character:FindFirstChild("chamshighlight")
 	if Existing then
-		Existing.FillColor = (Player:GetAttribute("ModeTeam") == "Traitor") and Color3.fromRGB(255, 0, 0) or Config.ChamsColor
+		Existing.FillColor = ChamsColor
 		return
 	end
 
 	local Highlight = Instance.new("Highlight")
 	Highlight.Name = "chamshighlight"
 	Highlight.Adornee = Character
-	Highlight.FillColor = (Player:GetAttribute("ModeTeam") == "Traitor") and Color3.fromRGB(255, 0, 0) or Config.ChamsColor
+	Highlight.FillColor = ChamsColor
 	Highlight.FillTransparency = 0.6
-	Highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+	Highlight.OutlineColor = ChamsOutlineColor
 	Highlight.OutlineTransparency = 0.36
 	Highlight.Parent = Character
 end
 
 function CreateBoxEsp(Character)
 	local Player = game.Players:GetPlayerFromCharacter(Character)
+	local BoxEspColor = ColorCheck(Player, RedC, Config.BespColor)
 	local Existing = Character:FindFirstChild("bespbox")
-	if Existing then local Stroke = Existing:FindFirstChild("Frame") and Existing.Frame:FindFirstChild("UIStroke") if Stroke then Stroke.Color = (Player:GetAttribute("ModeTeam") == "Traitor") and Color3.fromRGB(255, 0, 0) or Config.BespColor end return end
+	if Existing then local Stroke = Existing:FindFirstChild("Frame") and Existing.Frame:FindFirstChild("UIStroke") if Stroke then Stroke.Color = BoxEspColor end return end
 	local Billboard = Instance.new("BillboardGui", Character)
 	Billboard.Name = "bespbox"
 	Billboard.Adornee = Character:FindFirstChild("Torso") or Character.PrimaryPart
@@ -58,24 +77,21 @@ function CreateBoxEsp(Character)
 	local Stroke = Instance.new("UIStroke", Frame)
 	Stroke.Thickness = 1.67
 	Stroke.Transparency = 0.39
-	Stroke.Color = (Player:GetAttribute("ModeTeam") == "Traitor") and Color3.fromRGB(255, 0, 0) or Config.BespColor
+	Stroke.Color = BoxEspColor
 end
 
-function CreateDotEsp(Char)
-	local Part = Char:FindFirstChild("Torso") or Char:FindFirstChild("HumanoidRootPart") or Char:FindFirstChild("Root")
+function CreateDotEsp(Character)
+	local Part = Character:FindFirstChild("Torso") or Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Root")
+	local Player = game.Players:GetPlayerFromCharacter(Character)
+	local DotEspColor = ColorCheck(Player, RedC, Config.DespColor)
 	if not Part then
-		return
-	end
-
-	local Player = game.Players:GetPlayerFromCharacter(Char)
-	if not Player then
 		return
 	end
 
 	if Part:FindFirstChild("dotespbg") then
 		local Dotf = Part:FindFirstChild("dotespbg"):FindFirstChild("dotf")
 		if Dotf then
-			Dotf.BackgroundColor3 = (Player:GetAttribute("ModeTeam") == "Traitor") and Color3.fromRGB(255, 0, 0) or (Config.DespColor or Color3.fromRGB(255, 255, 255))
+			Dotf.BackgroundColor3 = DotEspColor
 		end
 		return
 	end
@@ -90,7 +106,7 @@ function CreateDotEsp(Char)
 
 	local Dotf = Instance.new("Frame", Billboard)
 	Dotf.Name = "dotf"
-	Dotf.BackgroundColor3 = (Player:GetAttribute("ModeTeam") == "Traitor") and Color3.fromRGB(255, 0, 0) or (Config.DespColor or Color3.fromRGB(255, 255, 255))
+	Dotf.BackgroundColor3 = DotEspColor
 	Dotf.Size = UDim2.new(1, 0, 1, 0)
 	Dotf.Transparency = 0.4
 	Dotf.BorderSizePixel = 0
@@ -101,12 +117,13 @@ end
 
 function CreateNameEsp(Head)
 	local Player = game.Players:GetPlayerFromCharacter(Head.Parent)
+	local NameEspColor = ColorCheck(Player, RedC, Config.NespColor)
 	local Existing = Head:FindFirstChild("nameesp")
 	
 	if Existing then
 		local NameLabel = Existing:FindFirstChild("NAME")
 		if NameLabel then
-			NameLabel.TextColor3 = (Player:GetAttribute("ModeTeam") == "Traitor") and Color3.fromRGB(255, 0, 0) or Config.NespColor
+			NameLabel.TextColor3 = NameEspColor
 		end
 		return
 	end
@@ -125,7 +142,7 @@ function CreateNameEsp(Head)
 	Namel.BorderSizePixel = 0
 	Namel.BackgroundTransparency = 1
 	Namel.Text = Player.Name and Player.Name:upper()
-	Namel.TextColor3 = (Player:GetAttribute("ModeTeam") == "Traitor") and Color3.fromRGB(255, 0, 0) or Config.NespColor
+	Namel.TextColor3 = NameEspColor
 	Namel.TextStrokeTransparency = 0.5
 	Namel.Font = Enum.Font.SourceSansBold
 	Namel.TextSize = VRService.VREnabled and 11 or not VRService.VREnabled and 14
