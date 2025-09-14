@@ -281,6 +281,7 @@ function UIModule:CreateMenu(data, parent)
 	end
 	
 	local function numberformathelper(num)
+		num = tonumber(num) or 0
 		local str = string.format("%.2f", math.floor(num * 100 + 0.5) / 100)
 		str = str:gsub("%.?0+$", "")
 		return str
