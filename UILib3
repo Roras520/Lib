@@ -1,0 +1,675 @@
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local VRService = game:GetService("VRService")
+local UIS = game:GetService("UserInputService")
+
+local Utils = {}
+Utils.__index = Utils
+
+Utils.MakeDraggable = function(obj, dragobj, speed)
+	local localmouse = game:GetService("Players").LocalPlayer:GetMouse()
+	local startPos = nil
+	local dragging = false
+	dragobj.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			startPos = Vector2.new(localmouse.X - obj.AbsolutePosition.X, localmouse.Y - obj.AbsolutePosition.Y)
+		end
+	end)
+	dragobj.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
+	localmouse.Move:Connect(function()
+		if dragging then
+			game:GetService("TweenService"):Create(obj, TweenInfo.new(math.clamp(speed, 0, 1), Enum.EasingStyle.Sine), { Position = UDim2.new(0, localmouse.X - startPos.X, 0, localmouse.Y - startPos.Y) }):Play()
+		end
+	end)
+end
+
+Utils.Stroke = function(Parent, Color, Transparency, Thickness, Mode)
+	local stroke = Instance.new("UIStroke", Parent)
+	if Color then stroke.Color = Color end
+	if Transparency then stroke.Transparency = Transparency end
+	if Thickness then stroke.Thickness = Thickness end
+	local ModeShortener
+	if Mode == "C" then ModeShortener = "Contextual" elseif Mode == "B" then ModeShortener = "Border" else ModeShortener = nil end
+	if ModeShortener and Enum.ApplyStrokeMode[ModeShortener] then stroke.ApplyStrokeMode = Enum.ApplyStrokeMode[ModeShortener] else stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border end
+	return stroke
+end
+
+Utils.Corner = function(Parent, CornerRadius)
+	local corner = Instance.new("UICorner", Parent)
+	if CornerRadius then corner.CornerRadius = CornerRadius end
+	return corner
+end
+
+Utils.Gradient = function(Parent, Color, Rotation, Transparency, Offset)
+	local gradient = Instance.new("UIGradient", Parent)
+	if Color then gradient.Color = Color end
+	if Rotation then gradient.Rotation = Rotation end
+	if Transparency then gradient.Transparency = Transparency end
+	if Offset then gradient.Offset = Offset end
+	return gradient
+end
+
+local UIModule = {}
+UIModule.__index = UIModule
+
+local defaultcolors = {
+	BACKGROUND = Color3.fromRGB(25, 25, 25),
+	BACKGROUND_LIGHT = Color3.fromRGB(30, 30, 30),
+	ACCENT = Color3.fromRGB(35, 35, 35),
+	TAB_CONTAINER = Color3.fromRGB(28, 28, 28),
+	TAB_ACTIVE = Color3.fromRGB(40, 40, 40),
+	TAB_INACTIVE = Color3.fromRGB(32, 32, 32),
+	TEXT_PRIMARY = Color3.fromRGB(220, 220, 220),
+	TEXT_SECONDARY = Color3.fromRGB(180, 180, 180),
+	TEXT_BUTTON = Color3.fromRGB(200, 200, 200),
+	TOGGLE_ON = Color3.fromRGB(226, 226, 226),
+	TOGGLE_OFF = Color3.fromRGB(30, 30, 30),
+	STROKE = Color3.fromRGB(38, 38, 38),
+	BUTTON_HOVER = Color3.fromRGB(38, 38, 38),
+}
+
+local defaultoptions = {
+	Title = "Title",
+	Transparency = 0,
+	CornerRadius = UDim.new(0, 15),
+	AnimationSpeed = 0.25,
+	Draggable = true,
+	VRSupport = true,
+}
+
+function UIModule.new(colors, options)
+	local self = setmetatable({}, UIModule)
+	
+	self.colors = setmetatable(colors or {}, {__index = defaultcolors})
+	self.options = setmetatable(options or {}, {__index = defaultoptions})
+	
+	self.menustates = {}
+	self.animationsettings = {
+		zoomin = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		toggle = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+		slide = TweenInfo.new(0.35, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+	}
+	self.quicktween = TweenInfo.new(self.options.AnimationSpeed, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+	self.fasttween = TweenInfo.new(self.options.AnimationSpeed * 0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	
+	return self
+end
+
+if not workspace:FindFirstChild("VRMenuParts") then
+    local VRMenuParts = Instance.new("Folder", workspace)
+    VRMenuParts.Name = "VRMenuParts"
+end
+
+function UIModule:CreateMenu(data, parent)
+	local ui = {}
+	
+	local sgui
+	if VRService.VREnabled and self.options.VRSupport then
+		sgui = Instance.new("SurfaceGui", parent or game:GetService("CoreGui"))
+		sgui.Adornee = Instance.new("Part")
+		sgui.Adornee.Size = Vector3.new(2.2, 1.727, 0.0011)
+		sgui.Adornee.Transparency = 1
+		sgui.Adornee.CanCollide = false
+		sgui.Adornee.CanQuery = false
+		sgui.Adornee.CanTouch = false
+		sgui.Adornee.Massless = true
+		sgui.Adornee.Parent = workspace
+		sgui.AlwaysOnTop = true
+		sgui.Face = Enum.NormalId.Front
+		sgui.ResetOnSpawn = false
+
+        local lefthand = nil
+        if workspace.CurrentCamera:FindFirstChild("VirtualHands") then
+            lefthand = workspace.CurrentCamera["VirtualHands"]["LeftHand"]
+        else
+            warn("Failed to find LeftHand in VirtualHands: VRSupport is only compatible with Opposer VR for now.")
+            return
+        end
+		
+		local weld = Instance.new("Weld")
+		weld.Part0 = lefthand
+		weld.Part1 = sgui.Adornee
+		weld.C1 = CFrame.new(-0.19, -0.85, 0) * CFrame.Angles(math.rad(-90), math.rad(90), 0)
+		weld.Parent = sgui.Adornee
+	else
+		sgui = Instance.new("ScreenGui", parent or game:GetService("CoreGui"))
+		sgui.ResetOnSpawn = false
+		sgui.IgnoreGuiInset = true
+	end
+	
+	local mainframe = Instance.new("Frame", sgui)
+	mainframe.BorderSizePixel = 0
+	mainframe.BackgroundColor3 = self.colors.BACKGROUND
+	mainframe.BackgroundTransparency = self.options.Transparency
+	mainframe.Size = UDim2.new(0, 585, 0, 502)
+	mainframe.Position = UDim2.new(0.682, -513, 0.488, -236)
+	mainframe.ClipsDescendants = true
+	
+	Utils.Corner(mainframe, self.options.CornerRadius)
+	
+	local header = Instance.new("Frame", mainframe)
+	header.BorderSizePixel = 0
+	header.BackgroundColor3 = self.colors.BACKGROUND_LIGHT
+	header.Size = UDim2.new(1, 0, 0, 50)
+	header.Position = UDim2.new(0, 0, 0, 0)
+	Utils.Corner(header, self.options.CornerRadius)
+	Utils.Stroke(header, self.colors.STROKE, 0.3, 1)
+	
+	local title = Instance.new("TextLabel", header)
+	title.BorderSizePixel = 0
+	title.BackgroundTransparency = 1
+	title.Size = UDim2.new(0.9, -15, 1, 0)
+	title.Position = UDim2.new(0, 20, 0, 0)
+	title.Text = self.options.Title
+	title.TextColor3 = self.colors.TEXT_PRIMARY
+	title.TextSize = 31
+	title.Font = Enum.Font.Oswald
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	
+	local container = Instance.new("Frame", mainframe)
+	container.BorderSizePixel = 0
+	container.BackgroundColor3 = self.colors.TAB_CONTAINER
+	container.Size = UDim2.new(0.011, 130, 0.832, -50)
+	container.Position = UDim2.new(0, 14, 0, 68)
+	Utils.Corner(container, self.options.CornerRadius)
+	Utils.Stroke(container, self.colors.STROKE, 0.3, 1)
+	
+	local listlayout = Instance.new("UIListLayout", container)
+	listlayout.FillDirection = Enum.FillDirection.Vertical
+	listlayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	listlayout.Padding = UDim.new(0, 6)
+	listlayout.SortOrder = Enum.SortOrder.LayoutOrder
+	
+	local tabp = Instance.new("UIPadding", container)
+	tabp.PaddingTop = UDim.new(0, 10)
+	tabp.PaddingBottom = UDim.new(0, 10)
+	tabp.PaddingLeft = UDim.new(0, 5)
+	tabp.PaddingRight = UDim.new(0, 5)
+	
+	local contentf = Instance.new("Frame", mainframe)
+	contentf.BorderSizePixel = 0
+	contentf.BackgroundColor3 = self.colors.TAB_CONTAINER
+	contentf.Size = UDim2.new(0.962, -150, 0.832, -50) --UDim2.new(0.936, -150, 0.833, -50)
+	contentf.Position = UDim2.new(0, 166, 0, 68) --UDim2.new(0, 19, 0, 73)
+	Utils.Corner(contentf, self.options.CornerRadius)
+	Utils.Stroke(contentf, self.colors.STROKE, 0.3, 1)
+	
+	ui.tabs = {}
+	ui.tabframes = {}
+	ui.tabelmnts = {}
+	ui.currenttab = 1
+	
+	if self.options.Draggable and not VRService.VREnabled then
+		Utils.MakeDraggable(mainframe, header, 0.1)
+	end
+	
+	local function switchtab(new)
+		if new == ui.currenttab then return end
+		for i = 1, #ui.tabs do
+			local elements = ui.tabelmnts[i]
+			if elements then
+				local tab = elements.tab
+				if i == new then
+					TweenService:Create(tab, self.quicktween, {
+						BackgroundColor3 = self.colors.TAB_ACTIVE,
+						TextColor3 = self.colors.TEXT_PRIMARY
+					}):Play()
+					ui.tabframes[i].Visible = true
+					title.Text = self.options.Title .. " - " .. data[i][1]
+				else
+					TweenService:Create(tab, self.quicktween, {
+						BackgroundColor3 = self.colors.TAB_INACTIVE,
+						TextColor3 = self.colors.TEXT_SECONDARY
+					}):Play()
+					ui.tabframes[i].Visible = false
+				end
+			end
+		end
+		ui.currenttab = new
+	end
+	
+	local function maketab(parent, text, icon, active, order)
+		local tab = Instance.new("TextButton", parent)
+		tab.BorderSizePixel = 0
+		tab.BackgroundColor3 = active and self.colors.TAB_ACTIVE or self.colors.TAB_INACTIVE
+		tab.Size = UDim2.new(1, 0, 0, 40)
+		tab.Text = text
+		tab.TextColor3 = active and self.colors.TEXT_PRIMARY or self.colors.TEXT_SECONDARY
+		tab.TextSize = 18
+		tab.Font = Enum.Font.Oswald
+		tab.TextXAlignment = Enum.TextXAlignment.Center
+		tab.LayoutOrder = order
+		Utils.Corner(tab, self.options.CornerRadius)
+		Utils.Stroke(tab, self.colors.STROKE, 0.3, 1)
+		
+		-- local ogsize = tab.Size
+		-- tab.MouseEnter:Connect(function()
+		-- 	if ui.currenttab ~= order then
+		-- 		TweenService:Create(tab, self.fasttween, {BackgroundColor3 = self.colors.BUTTON_HOVER}):Play()
+		-- 	end
+		-- end)
+		-- tab.MouseLeave:Connect(function()
+		-- 	if ui.currenttab ~= order then
+		-- 		TweenService:Create(tab, self.fasttween, {BackgroundColor3 = self.colors.TAB_INACTIVE}):Play()
+		-- 	end
+		-- end)
+		ui.tabelmnts[order] = {tab = tab}
+		return tab
+	end
+	
+	local function makesf(parent, visible)
+		local scrollf = Instance.new("ScrollingFrame", parent)
+		scrollf.BorderSizePixel = 0
+		scrollf.BackgroundTransparency = 1
+		scrollf.Size = UDim2.new(1, 0, 1, 0)
+		scrollf.Position = UDim2.new(0, 0, 0, 0)
+		scrollf.ScrollBarThickness = 30
+		scrollf.ScrollBarImageColor3 = self.colors.STROKE
+		scrollf.ScrollBarImageTransparency = 0.4
+		scrollf.Visible = visible or false
+		scrollf.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
+		scrollf.AutomaticCanvasSize = Enum.AutomaticSize.X
+		local contentl = Instance.new("UIListLayout", scrollf)
+		contentl.Padding = UDim.new(0, 6)
+		contentl.SortOrder = Enum.SortOrder.LayoutOrder
+		return scrollf
+	end
+	
+	local function numberformathelper(num)
+		local str = string.format("%.2f", math.floor(num * 100 + 0.5) / 100)
+		str = str:gsub("%.?0+$", "")
+		return str
+	end
+	
+	local function makespacer(parent, text, order)
+		local spacer = Instance.new("Frame", parent)
+		spacer.BorderSizePixel = 0
+		spacer.BackgroundColor3 = self.colors.BACKGROUND_LIGHT
+		spacer.Size = UDim2.new(0.9, 0, 0, 30)
+		spacer.LayoutOrder = order
+		Utils.Corner(spacer, self.options.CornerRadius)
+		Utils.Stroke(spacer, self.colors.STROKE, 0.3, 1)
+		
+		local spacertext = Instance.new("TextLabel", spacer)
+		spacertext.BorderSizePixel = 0
+		spacertext.BackgroundTransparency = 1
+		spacertext.Size = UDim2.new(1, -45, 1, 0)
+		spacertext.Position = UDim2.new(0, 10, 0, 0)
+		spacertext.Text = text
+		spacertext.TextColor3 = self.colors.TEXT_PRIMARY
+		spacertext.TextSize = 20
+		spacertext.Font = Enum.Font.Oswald
+		spacertext.TextXAlignment = Enum.TextXAlignment.Left
+		return spacer
+	end
+	
+	local function makebtn(parent, text, btntype, data, order, desc)
+		if btntype == "spacer" then
+			return makespacer(parent, text, order)
+		end
+	
+		local button = Instance.new("TextButton", parent)
+		button.BorderSizePixel = 0
+		button.BackgroundColor3 = self.colors.ACCENT
+		button.Size = UDim2.new(0.9, 0, 0, 40)
+		button.Text = ""
+		button.LayoutOrder = order
+		Utils.Corner(button, UDim.new(0, 13))
+		Utils.Stroke(button, self.colors.STROKE, 0.3, 1)
+		
+		local textl = Instance.new("TextLabel", button)
+		textl.BorderSizePixel = 0
+		textl.BackgroundTransparency = 1
+		textl.Size = UDim2.new(1, -45, 1, 0)
+		textl.Position = UDim2.new(0, 10, 0, -7)
+		textl.Text = text
+		textl.TextColor3 = self.colors.TEXT_BUTTON
+		textl.TextSize = 20
+		textl.Font = Enum.Font.Oswald
+		textl.TextXAlignment = Enum.TextXAlignment.Left
+		
+		local descl = Instance.new("TextLabel", button)
+		descl.BorderSizePixel = 0
+		descl.BackgroundTransparency = 1
+		descl.Size = UDim2.new(1, -63, 0.5, 0)
+		descl.Position = UDim2.new(0, 10, 0.5, 0)
+		descl.Text = desc or ""
+		descl.TextColor3 = self.colors.TEXT_SECONDARY
+		descl.TextSize = 15
+		descl.Font = Enum.Font.Oswald
+		descl.TextXAlignment = Enum.TextXAlignment.Left
+		
+		local toggled = false
+		if btntype == "toggle" then
+			local toggle = Instance.new("TextButton", button)
+			toggle.BackgroundColor3 = self.colors.TOGGLE_OFF
+			if self.menustates[text] == true then
+				toggle.BackgroundColor3 = self.colors.TOGGLE_ON
+			end
+			toggle.AnchorPoint = Vector2.new(1, 0.5)
+			toggle.Position = UDim2.new(1, -18, 0.5, 0)
+			toggle.Size = UDim2.new(0, 35, 0, 35)
+			toggle.Text = ""
+			toggle.BorderMode = Enum.BorderMode.Inset
+			Utils.Corner(toggle, self.options.CornerRadius)
+			Utils.Stroke(toggle, self.colors.STROKE, 0.3, 1)
+			
+			if self.menustates[text] == nil then
+				self.menustates[text] = false
+			end
+			toggled = self.menustates[text]
+		elseif btntype == "ss" then
+			local ssframe = Instance.new("Frame", button)
+			ssframe.BorderSizePixel = 0
+			ssframe.BackgroundColor3 = self.colors.BACKGROUND_LIGHT
+			ssframe.Size = UDim2.new(0, 78, 0, 20)
+			ssframe.Position = UDim2.new(0.953, -70, 0.425, -7)
+			ssframe.Name = "ssframe"
+			Utils.Corner(ssframe, self.options.CornerRadius)
+			
+			local minus = Instance.new("TextButton", ssframe)
+			minus.BackgroundColor3 = self.colors.TAB_INACTIVE
+			minus.AnchorPoint = Vector2.new(1, 0)
+			minus.Position = UDim2.new(0.279, 0, 0, 0)
+			minus.Size = UDim2.new(0, 20, 0, 19)
+			minus.Text = "<"
+			minus.TextColor3 = self.colors.TEXT_PRIMARY
+			minus.TextSize = 12
+			minus.Font = Enum.Font.Oswald
+			minus.TextScaled = true
+			Utils.Corner(minus, self.options.CornerRadius)
+			Utils.Stroke(minus, self.colors.STROKE, 0.3, 1)
+			
+			local plus = Instance.new("TextButton", ssframe)
+			plus.BackgroundColor3 = self.colors.TAB_INACTIVE
+			plus.AnchorPoint = Vector2.new(1, 0)
+			plus.Position = UDim2.new(0.992, 0, 0, 0)
+			plus.Size = UDim2.new(0, 17, 0, 19)
+			plus.Text = ">"
+			plus.TextColor3 = self.colors.TEXT_PRIMARY
+			plus.TextSize = 12
+			plus.Font = Enum.Font.Oswald
+			plus.TextScaled = true
+			Utils.Corner(plus, self.options.CornerRadius)
+			Utils.Stroke(plus, self.colors.STROKE, 0.3, 1)
+			
+			local valuebox = Instance.new("TextLabel", ssframe)
+			valuebox.BorderSizePixel = 0
+			valuebox.BackgroundColor3 = self.colors.ACCENT
+			valuebox.Size = UDim2.new(0, 40, 0, 19)
+			valuebox.Position = UDim2.new(0.266, 0, 0, 0)
+			valuebox.Text = numberformathelper(data.parent[data.variable])
+			valuebox.TextColor3 = self.colors.TEXT_PRIMARY
+			valuebox.TextSize = 12
+			valuebox.Font = Enum.Font.Oswald
+			valuebox.TextScaled = true
+			Utils.Corner(valuebox, self.options.CornerRadius)
+			Utils.Stroke(valuebox, self.colors.STROKE, 0.3, 1)
+			
+			local function animbtn(btn, hover)
+				local color = hover and self.colors.BUTTON_HOVER or self.colors.TAB_INACTIVE
+				TweenService:Create(btn, self.fasttween, {BackgroundColor3 = color}):Play()
+			end
+			
+			minus.MouseEnter:Connect(function() animbtn(minus, true) end)
+			minus.MouseLeave:Connect(function() animbtn(minus, false) end)
+			plus.MouseEnter:Connect(function() animbtn(plus, true) end)
+			plus.MouseLeave:Connect(function() animbtn(plus, false) end)
+			
+			minus.MouseButton1Click:Connect(function()
+				local currentValue = data.parent[data.variable]
+				local newValue = currentValue - data.removeCount
+				if newValue >= data.min then
+					newValue = math.floor(newValue * 100 + 0.5) / 100
+					data.parent[data.variable] = newValue
+					valuebox.Text = numberformathelper(newValue)
+					TweenService:Create(minus, self.fasttween, {BackgroundColor3 = self.colors.BUTTON_HOVER}):Play()
+					task.wait(0.1)
+					TweenService:Create(minus, self.fasttween, {BackgroundColor3 = self.colors.TAB_INACTIVE}):Play()
+				end
+			end)
+			
+			plus.MouseButton1Click:Connect(function()
+				local currentValue = data.parent[data.variable]
+				local newValue = currentValue + data.addCount
+				if newValue <= data.maxCount then
+					newValue = math.floor(newValue * 100 + 0.5) / 100
+					data.parent[data.variable] = newValue
+					valuebox.Text = numberformathelper(newValue)
+					TweenService:Create(plus, self.fasttween, {BackgroundColor3 = self.colors.BUTTON_HOVER}):Play()
+					task.wait(0.1)
+					TweenService:Create(plus, self.fasttween, {BackgroundColor3 = self.colors.TAB_INACTIVE}):Play()
+				end
+			end)
+			
+			ssframe.Transparency = 1
+		elseif btntype == "button" then
+			local actionbtn = Instance.new("TextButton", button)
+			actionbtn.BackgroundColor3 = self.colors.TAB_INACTIVE
+			actionbtn.AnchorPoint = Vector2.new(1, 0.5)
+			actionbtn.Position = UDim2.new(1, -5, 0.5, 0)
+			actionbtn.Size = UDim2.new(0, 25, 0, 25)
+			actionbtn.Text = ">"
+			actionbtn.TextColor3 = self.colors.TEXT_PRIMARY
+			actionbtn.TextSize = 12
+			actionbtn.Font = Enum.Font.Oswald
+			actionbtn.TextScaled = true
+			Utils.Corner(actionbtn, self.options.CornerRadius)
+			Utils.Stroke(actionbtn, self.colors.STROKE, 0.3, 1)
+			
+			actionbtn.MouseEnter:Connect(function()
+				TweenService:Create(actionbtn, self.fasttween, {BackgroundColor3 = self.colors.BUTTON_HOVER}):Play()
+			end)
+			actionbtn.MouseLeave:Connect(function()
+				TweenService:Create(actionbtn, self.fasttween, {BackgroundColor3 = self.colors.TAB_INACTIVE}):Play()
+			end)
+		elseif btntype == "rgb" then
+			button.Size = UDim2.new(0.9, 0, 0, 52)
+			local rgbf = Instance.new("Frame", button)
+			rgbf.BorderSizePixel = 0
+			rgbf.BackgroundColor3 = self.colors.BACKGROUND_LIGHT
+			rgbf.Size = UDim2.new(0, 150, 0, 34)
+			rgbf.Position = UDim2.new(1, -160, 0.5, -17)
+			Utils.Corner(rgbf, UDim.new(0, 8))
+			Utils.Stroke(rgbf, self.colors.STROKE, 0.3, 1)
+			
+			local rl = Instance.new("TextLabel", rgbf)
+			rl.BackgroundTransparency = 1
+			rl.Size = UDim2.new(0, 10, 1, 0)
+			rl.Position = UDim2.new(0, 5, 0, 0)
+			rl.Text = "R"
+			rl.TextColor3 = self.colors.TEXT_PRIMARY
+			rl.TextSize = 15
+			rl.Font = Enum.Font.Oswald
+			rl.TextXAlignment = Enum.TextXAlignment.Left
+			
+			local rtextbx = Instance.new("TextBox", rgbf)
+			rtextbx.BorderSizePixel = 0
+			rtextbx.BackgroundColor3 = self.colors.ACCENT
+			rtextbx.Size = UDim2.new(0, 24, 0, 24)
+			rtextbx.Position = UDim2.new(0, 15, 0, 5)
+			rtextbx.Text = tostring(math.floor(data.r * 255))
+			rtextbx.TextColor3 = self.colors.TEXT_PRIMARY
+			rtextbx.TextSize = 15
+			rtextbx.Font = Enum.Font.Oswald
+			rtextbx.TextXAlignment = Enum.TextXAlignment.Center
+			Utils.Corner(rtextbx, UDim.new(0, 6))
+			Utils.Stroke(rtextbx, self.colors.STROKE, 0.3, 1)
+			
+			local gl = Instance.new("TextLabel", rgbf)
+			gl.BackgroundTransparency = 1
+			gl.Size = UDim2.new(0, 10, 1, 0)
+			gl.Position = UDim2.new(0, 45, 0, 0)
+			gl.Text = "G"
+			gl.TextColor3 = self.colors.TEXT_PRIMARY
+			gl.TextSize = 15
+			gl.Font = Enum.Font.Oswald
+			gl.TextXAlignment = Enum.TextXAlignment.Left
+			
+			local gtextbx = Instance.new("TextBox", rgbf)
+			gtextbx.BorderSizePixel = 0
+			gtextbx.BackgroundColor3 = self.colors.ACCENT
+			gtextbx.Size = UDim2.new(0, 24, 0, 24)
+			gtextbx.Position = UDim2.new(0, 55, 0, 5)
+			gtextbx.Text = tostring(math.floor(data.g * 255))
+			gtextbx.TextColor3 = self.colors.TEXT_PRIMARY
+			gtextbx.TextSize = 15
+			gtextbx.Font = Enum.Font.Oswald
+			gtextbx.TextXAlignment = Enum.TextXAlignment.Center
+			Utils.Corner(gtextbx, UDim.new(0, 6))
+			Utils.Stroke(gtextbx, self.colors.STROKE, 0.3, 1)
+			
+			local bl = Instance.new("TextLabel", rgbf)
+			bl.BackgroundTransparency = 1
+			bl.Size = UDim2.new(0, 10, 1, 0)
+			bl.Position = UDim2.new(0, 85, 0, 0)
+			bl.Text = "B"
+			bl.TextColor3 = self.colors.TEXT_PRIMARY
+			bl.TextSize = 15
+			bl.Font = Enum.Font.Oswald
+			bl.TextXAlignment = Enum.TextXAlignment.Left
+			
+			local btextbx = Instance.new("TextBox", rgbf)
+			btextbx.BorderSizePixel = 0
+			btextbx.BackgroundColor3 = self.colors.ACCENT
+			btextbx.Size = UDim2.new(0, 24, 0, 24)
+			btextbx.Position = UDim2.new(0, 95, 0, 5)
+			btextbx.Text = tostring(math.floor(data.b * 255))
+			btextbx.TextColor3 = self.colors.TEXT_PRIMARY
+			btextbx.TextSize = 15
+			btextbx.Font = Enum.Font.Oswald
+			btextbx.TextXAlignment = Enum.TextXAlignment.Center
+			Utils.Corner(btextbx, UDim.new(0, 6))
+			Utils.Stroke(btextbx, self.colors.STROKE, 0.3, 1)
+			
+			local setbtn = Instance.new("TextButton", rgbf)
+			setbtn.BorderSizePixel = 0
+			setbtn.BackgroundColor3 = self.colors.TAB_INACTIVE
+			setbtn.Size = UDim2.new(0, 30, 0, 24)
+			setbtn.Position = UDim2.new(0, 120, 0, 5)
+			setbtn.Text = "Set"
+			setbtn.TextColor3 = self.colors.TEXT_PRIMARY
+			setbtn.TextSize = 15
+			setbtn.Font = Enum.Font.Oswald
+			Utils.Corner(setbtn, UDim.new(0, 6))
+			Utils.Stroke(setbtn, self.colors.STROKE, 0.3, 1)
+			
+			local function validate(textbx, value)
+				local num = tonumber(value) or 255
+				num = math.max(0, math.min(255, math.floor(num)))
+				textbx.Text = tostring(num)
+				return num
+			end
+			
+			rtextbx.FocusLost:Connect(function() validate(rtextbx, rtextbx.Text) end)
+			gtextbx.FocusLost:Connect(function() validate(gtextbx, gtextbx.Text) end)
+			btextbx.FocusLost:Connect(function() validate(btextbx, btextbx.Text) end)
+			
+			setbtn.MouseEnter:Connect(function()
+				TweenService:Create(setbtn, self.fasttween, {BackgroundColor3 = self.colors.BUTTON_HOVER}):Play()
+			end)
+			setbtn.MouseLeave:Connect(function()
+				TweenService:Create(setbtn, self.fasttween, {BackgroundColor3 = self.colors.TAB_INACTIVE}):Play()
+			end)
+			
+			setbtn.MouseButton1Click:Connect(function()
+				local r = validate(rtextbx, rtextbx.Text)
+				local g = validate(gtextbx, gtextbx.Text)
+				local b = validate(btextbx, btextbx.Text)
+				TweenService:Create(setbtn, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {BackgroundColor3 = self.colors.BUTTON_HOVER}):Play()
+				if data.callback then data.callback(r, g, b) end
+				task.wait(0.1)
+				TweenService:Create(setbtn, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {BackgroundColor3 = self.colors.TAB_INACTIVE}):Play()
+			end)
+		end
+		
+		button.MouseButton1Click:Connect(function()
+			if btntype == "toggle" then
+				toggled = not toggled
+				self.menustates[text] = toggled
+				local toggle = button:FindFirstChild("TextButton")
+				if toggle then
+					TweenService:Create(toggle, self.animationsettings.toggle, {
+						BackgroundColor3 = toggled and self.colors.TOGGLE_ON or self.colors.TOGGLE_OFF
+					}):Play()
+				end
+				if type(data) == "function" then
+					data()
+				end
+			elseif btntype == "button" then
+				if type(data) == "function" then
+					data()
+				end
+			end
+		end)
+		
+		return button
+	end
+	
+	for i, tabinfo in ipairs(data) do
+		local tabname = tabinfo[1]
+		local tabicon = tabinfo[2]
+		local btnlist = tabinfo[3]
+		local tab = maketab(container, tabname, tabicon, i == 1, i)
+		local sf = makesf(contentf, i == 1)
+		ui.tabs[i] = tab
+		ui.tabframes[i] = sf
+		local totalbp = 20
+		for j, btninfo in ipairs(btnlist) do
+			local btntext = btninfo[1]
+			local btntype = btninfo[2]
+			local btndata = nil
+			local cbfunc = nil
+			local description = btninfo[5] or ""
+			if btntype == "spacer" then
+				makespacer(sf, btntext, j)
+				totalbp = totalbp + 30 + 5
+			else
+				if btntype == "toggle" then
+					local initialstate = btninfo[3]
+					cbfunc = btninfo[4]
+					btndata = cbfunc
+					self.menustates[btntext] = initialstate
+				elseif btntype == "ss" then
+					btndata = btninfo[4]
+				elseif btntype == "button" then
+					cbfunc = btninfo[4]
+					btndata = cbfunc
+				elseif btntype == "rgb" then
+					btndata = btninfo[3]
+				end
+				makebtn(sf, btntext, btntype, btndata, j, description)
+				totalbp = totalbp + (btntype == "rgb" and 120 or 40) + 5
+			end
+		end
+		sf.CanvasSize = UDim2.new(0, 0, 0, totalbp)
+		tab.MouseButton1Click:Connect(function()
+			switchtab(i)
+		end)
+	end
+	
+	task.spawn(function()
+		local ogsize = mainframe.Size
+		mainframe.Size = UDim2.new(0, 0, 0, 0)
+		mainframe.Position = UDim2.new(0.5, 0, 0.5, 0)
+		TweenService:Create(mainframe, self.animationsettings.zoomin, {
+			Size = ogsize,
+			Position = UDim2.new(0.5, -290, 0.5, -230)
+		}):Play()
+		task.wait(0.2)
+	end)
+	
+	ui.mainframe = mainframe
+	ui.title = title
+	ui.container = container
+	ui.contentf = contentf
+	
+	return ui
+end
+
+return UIModule
