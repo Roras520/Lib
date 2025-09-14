@@ -24,7 +24,7 @@ local RedC = Color3.fromRGB(255, 0, 0)
 
 -- Helper Functions
 function ColorCheck(Player, EnemyColor, FriendlyColor)
-	if workspace:FindFirstChild("PowerUps") and game.GameId == 7406004869 then
+	if workspace:FindFirstChild("PowerUps") then
 		return (Player:GetAttribute("ModeTeam") == "Traitor") and EnemyColor or FriendlyColor
 	elseif LocalPlayer.Team and Player.Team then
 		return (LocalPlayer.Team.Name ~= Player.Team) and EnemyColor or FriendlyColor
