@@ -4,9 +4,10 @@ end
 local ConfigManager = {}
 _G.ConfigManager = ConfigManager
 
-local HttpService = game:GetService("HttpService")
+_G.__ALL_REGISTERED_CONFIGS = _G.__ALL_REGISTERED_CONFIGS or {}
+local RegisteredConfigs = _G.__ALL_REGISTERED_CONFIGS
 
-local RegisteredConfigs = {}
+local HttpService = game:GetService("HttpService")
 local Toggled = true
 
 local function Color3ToTable(Color)
@@ -46,11 +47,6 @@ local function Register(ConfigName, ConfigTable, ConfigPath)
         Table = ConfigTable,
         Path = path
     }
-    if not isfile(path) then
-        local data = SerializeTable(ConfigTable)
-        local json = HttpService:JSONEncode(data)
-        writefile(path, json)
-    end
     return true
 end
 
@@ -142,5 +138,3 @@ ConfigManager.GetConfigInfo = GetConfigInfo
 ConfigManager.Toggle = Toggle
 
 return ConfigManager
-
-
