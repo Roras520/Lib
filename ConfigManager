@@ -1,137 +1,133 @@
+if _G.ConfigManager then
+    return _G.ConfigManager
+end
 local ConfigManager = {}
+_G.ConfigManager = ConfigManager
 
 local HttpService = game:GetService("HttpService")
 
 local RegisteredConfigs = {}
 local Toggled = true
 
-function Color3ToTable(Color)
-	return {R = Color.R, G = Color.G, B = Color.B}
+local function Color3ToTable(Color)
+    return {R = Color.R, G = Color.G, B = Color.B}
 end
 
-function TableToColor3(Table)
-	return Color3.new(Table.R, Table.G, Table.B)
+local function TableToColor3(Table)
+    return Color3.new(Table.R, Table.G, Table.B)
 end
 
-function BoolToNumber(Bool)
-	return Bool and 1 or 0
+local function SerializeTable(Table)
+    local Data = {}
+    for K, V in pairs(Table) do
+        if typeof(V) == "Color3" then
+            Data[K] = Color3ToTable(V)
+        else
+            Data[K] = V
+        end
+    end
+    return Data
 end
 
-function NumberToBool(Num)
-	return Num == 1
+local function DeserializeTable(ConfigData, Table)
+    for K, V in pairs(ConfigData) do
+        if type(V) == "table" and V.R and V.G and V.B then
+            Table[K] = Color3.fromRGB((V.R or 0) * 255, (V.G or 0) * 255, (V.B or 0) * 255)
+        else
+            Table[K] = V
+        end
+    end
 end
 
-function SerializeTable(Table)
-	local Data = {}
-	for K, V in pairs(Table) do
-		if typeof(V) == "Color3" then
-			Data[K] = Color3ToTable(V)
-		elseif type(V) == "boolean" then
-			Data[K] = BoolToNumber(V)
-		else
-			Data[K] = V
-		end
-	end
-	return Data
+local function Register(ConfigName, ConfigTable, ConfigPath)
+    local path = ConfigPath or (ConfigName .. ".json")
+    RegisteredConfigs[ConfigName] = {
+        Name = ConfigName,
+        Table = ConfigTable,
+        Path = path
+    }
+    if not isfile(path) then
+        local data = SerializeTable(ConfigTable)
+        local json = HttpService:JSONEncode(data)
+        writefile(path, json)
+    end
+    return true
 end
 
-function DeserializeTable(ConfigData, Table)
-	for K, V in pairs(ConfigData) do
-		if type(Table[K]) == "boolean" then
-			Table[K] = NumberToBool(V)
-		elseif type(Table[K]) == "userdata" and Table[K].R then
-			Table[K] = Color3.fromRGB(V.R * 255, V.G * 255, V.B * 255)
-		else
-			Table[K] = V
-		end
-	end
+local function Unregister(ConfigName)
+    if RegisteredConfigs[ConfigName] then
+        RegisteredConfigs[ConfigName] = nil
+        return true
+    end
+    return false
 end
 
-function Register(ConfigName, ConfigTable, ConfigPath)
-	local path = ConfigPath or (ConfigName .. ".json")
-	RegisteredConfigs[ConfigName] = {
-		Name = ConfigName,
-		Table = ConfigTable,
-		Path = ConfigPath
-	}
-	return true
+local function SaveConfig(ConfigName)
+    if not Toggled then return end
+    local Config = RegisteredConfigs[ConfigName]
+    if not Config then warn("ConfigManager - No config registered with name '" .. tostring(ConfigName) .. "'") return false end
+    local Success, Result = pcall(function()
+        local Data = SerializeTable(Config.Table)
+        local JsonData = HttpService:JSONEncode(Data)
+        writefile(Config.Path, JsonData)
+    end)
+    if not Success then warn("ConfigManager - " .. Config.Name .. " save failed: " .. tostring(Result)) return false end
+    return true
 end
 
-function Unregister(ConfigName)
-	if RegisteredConfigs[ConfigName] then
-		RegisteredConfigs[ConfigName] = nil
-		return true
-	end
-	return false
+local function LoadConfig(ConfigName)
+    local Config = RegisteredConfigs[ConfigName]
+    if not Config then warn("ConfigManager - No config registered with name '" .. tostring(ConfigName) .. "'") return false end
+    if not isfile(Config.Path) then warn("ConfigManager - No " .. Config.Name .. " file found at " .. Config.Path) return false end
+    local Success, Result = pcall(function()
+        local JsonData = readfile(Config.Path)
+        local Data = HttpService:JSONDecode(JsonData)
+        DeserializeTable(Data, Config.Table)
+    end)
+    if not Success then warn("ConfigManager - " .. Config.Name .. " load failed: " .. tostring(Result)) return false end
+    return true
 end
 
-function SaveConfig(ConfigName)
-	if not Toggled then return end
-	local Config = RegisteredConfigs[ConfigName]
-	if not Config then warn("ConfigManager - No config registered with name '" .. tostring(ConfigName) .. "'") return false end
-	local Success, Result = pcall(function()
-		local Data = SerializeTable(Config.Table)
-		local JsonData = HttpService:JSONEncode(Data)
-		writefile(Config.Path, JsonData)
-	end)
-	if not Success then warn("ConfigManager - " .. Config.Name .. " save failed: " .. tostring(Result)) return false end
-	return true
+local function SaveAll()
+    local results = {}
+    for Name, _ in pairs(RegisteredConfigs) do
+        results[Name] = SaveConfig(Name)
+    end
+    return results
 end
 
-function LoadConfig(ConfigName)
-	local Config = RegisteredConfigs[ConfigName]
-	if not Config then warn("ConfigManager - No config registered with name '" .. tostring(ConfigName) .. "'") return false end
-	if not isfile(Config.Path) then warn("ConfigManager - No " .. Config.Name .. " file found at " .. Config.Path) return false end
-	local Success, Result = pcall(function()
-		local JsonData = readfile(Config.Path)
-		local Data = HttpService:JSONDecode(JsonData)
-		DeserializeTable(Data, Config.Table)
-	end)
-	if not Success then warn("ConfigManager - " .. Config.Name .. " load failed: " .. tostring(Result)) return false end
-	return true
+local function LoadAllConfigs()
+    local results = {}
+    for Name, _ in pairs(RegisteredConfigs) do
+        results[Name] = LoadConfig(Name)
+    end
+    return results
 end
 
-function SaveAll()
-	local results = {}
-	for Name, _ in pairs(RegisteredConfigs) do
-		results[Name] = SaveConfig(Name)
-	end
-	return results
+local function GetRegisteredConfigs()
+    local names = {}
+    for Name, _ in pairs(RegisteredConfigs) do
+        table.insert(names, Name)
+    end
+    return names
 end
 
-function LoadAllConfigs()
-	local results = {}
-	for Name, _ in pairs(RegisteredConfigs) do
-		results[Name] = LoadConfig(Name)
-	end
-	return results
+local function IsConfigRegistered(ConfigName)
+    return RegisteredConfigs[ConfigName] ~= nil
 end
 
-function GetRegisteredConfigs()
-	local names = {}
-	for Name, _ in pairs(RegisteredConfigs) do
-		table.insert(names, Name)
-	end
-	return names
+local function Toggle(Bool)
+    Toggled = Bool
 end
 
-function IsConfigRegistered(ConfigName)
-	return RegisteredConfigs[ConfigName] ~= nil
-end
-
-function Toggle(Bool)
-	Toggled = Bool
-end
-
-function GetConfigInfo(ConfigName)
-	local Config = RegisteredConfigs[ConfigName]
-	if not Config then return nil end
-	return {
-		Name = Config.Name,
-		Path = Config.Path,
-		Table = Config.Table
-
-	}
+local function GetConfigInfo(ConfigName)
+    local Config = RegisteredConfigs[ConfigName]
+    if not Config then return nil end
+    return {
+        Name = Config.Name,
+        Path = Config.Path,
+        Table = Config.Table
+    }
 end
 
 ConfigManager.Register = Register
@@ -146,3 +142,5 @@ ConfigManager.GetConfigInfo = GetConfigInfo
 ConfigManager.Toggle = Toggle
 
 return ConfigManager
+
+
