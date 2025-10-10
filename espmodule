@@ -2,7 +2,6 @@ local EspModule = {}
 
 local Players = game:GetService("Players")
 local VRService = game:GetService("VRService")
-local Workspace = game:GetService("Workspace")
 
 local Config = {
     -- States
@@ -10,7 +9,7 @@ local Config = {
     BoxesOn = false,
 	NamesOn = false,
 	ChamsOn = false,
-	HealthbarOn = false,
+	DotsOn = false,
 
     -- Colors
 	ChamsColor = Color3.fromRGB(0, 170, 255),
@@ -61,58 +60,11 @@ function CreateChamsHighlight(Character)
 	Highlight.Parent = Character
 end
 
-function CreateHealthEsp(Character)
-	if not Config.HealthbarOn then return end
-	local Player = game.Players:GetPlayerFromCharacter(Character)
-	local Billboard = Character:FindFirstChild("bespbox")
-	if not Player or not Player.Character or not Billboard then return end
-	local Humanoid = Player.Character:FindFirstChildOfClass("Humanoid")
-	if not Humanoid then return end
-	if Billboard:FindFirstChild("healthBarHolder") then
-		Billboard.healthBarHolder:Destroy()
-	end
-	local boxFrame = Billboard:FindFirstChild("Frame")
-	local barHeightPx = boxFrame and boxFrame.AbsoluteSize.Y or 80
-	local HealthBarHolder = Instance.new("Frame")
-	HealthBarHolder.Name = "healthBarHolder"
-	HealthBarHolder.BackgroundColor3 = Color3.new(0,0,0)
-	HealthBarHolder.BorderSizePixel = 0
-	HealthBarHolder.Size = UDim2.new(0, 3, 1, 0)
-	HealthBarHolder.Position = UDim2.new(0, -5, 0, 0)
-	HealthBarHolder.Parent = Billboard
-	local HealthBar = Instance.new("Frame")
-	HealthBar.Name = "healthBar"
-	HealthBar.BackgroundColor3 = Color3.fromRGB(69, 255, 68)
-	HealthBar.BorderSizePixel = 0
-	HealthBar.AnchorPoint = Vector2.new(0, 1)
-	HealthBar.Position = UDim2.new(0, 0, 1, 0)
-	HealthBar.Size = UDim2.new(1, 0, 1, 0)
-	HealthBar.Parent = HealthBarHolder
-	local function updateHealth(v)
-		local ratio = math.clamp(v / Humanoid.MaxHealth, 0, 1)
-		HealthBar.Size = UDim2.new(1, 0, ratio, 0)
-	end
-	updateHealth(Humanoid.Health)
-	local healthConn
-	healthConn = Humanoid.HealthChanged:Connect(function()
-		if Humanoid.Parent == nil or HealthBarHolder.Parent == nil then healthConn:Disconnect() return end
-		updateHealth(Humanoid.Health)
-	end)
-	HealthBarHolder.AncestryChanged:Connect(function(_, parent)
-		if not parent and healthConn then healthConn:Disconnect() end
-	end)
-end
-
 function CreateBoxEsp(Character)
 	local Player = game.Players:GetPlayerFromCharacter(Character)
 	local BoxEspColor = ColorCheck(Player, RedC, Config.BespColor)
 	local Existing = Character:FindFirstChild("bespbox")
-	if Existing then 
-		local Stroke = Existing:FindFirstChild("Frame") and Existing.Frame:FindFirstChild("UIStroke") 
-		if Stroke then Stroke.Color = BoxEspColor end 
-		if Config.HealthbarOn then CreateHealthEsp(Character) end
-		return 
-	end
+	if Existing then local Stroke = Existing:FindFirstChild("Frame") and Existing.Frame:FindFirstChild("UIStroke") if Stroke then Stroke.Color = BoxEspColor end return end
 	local Billboard = Instance.new("BillboardGui", Character)
 	Billboard.Name = "bespbox"
 	Billboard.Adornee = Character:FindFirstChild("Torso") or Character.PrimaryPart
@@ -126,7 +78,41 @@ function CreateBoxEsp(Character)
 	Stroke.Thickness = 1.67
 	Stroke.Transparency = 0.39
 	Stroke.Color = BoxEspColor
-	if Config.HealthbarOn then CreateHealthEsp(Character) end
+end
+
+function CreateDotEsp(Character)
+	local Part = Character:FindFirstChild("Torso") or Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Root")
+	local Player = game.Players:GetPlayerFromCharacter(Character)
+	local DotEspColor = ColorCheck(Player, RedC, Config.DespColor)
+	if not Part then
+		return
+	end
+
+	if Part:FindFirstChild("dotespbg") then
+		local Dotf = Part:FindFirstChild("dotespbg"):FindFirstChild("dotf")
+		if Dotf then
+			Dotf.BackgroundColor3 = DotEspColor
+		end
+		return
+	end
+
+	local Billboard = Instance.new("BillboardGui", Part)
+	Billboard.Name = "dotespbg"
+	Billboard.Adornee = Part
+	Billboard.StudsOffset = Vector3.new(0, 0.4, 0)
+	Billboard.Size = UDim2.new(0.1, 5, 0.1, 5)
+	Billboard.AlwaysOnTop = true
+	Billboard.Enabled = true
+
+	local Dotf = Instance.new("Frame", Billboard)
+	Dotf.Name = "dotf"
+	Dotf.BackgroundColor3 = DotEspColor
+	Dotf.Size = UDim2.new(1, 0, 1, 0)
+	Dotf.Transparency = 0.4
+	Dotf.BorderSizePixel = 0
+
+	local Dotc = Instance.new("UICorner", Dotf)
+	Dotc.CornerRadius = UDim.new(0.45, 0)
 end
 
 function CreateNameEsp(Head)
@@ -187,12 +173,11 @@ function ClearEsp(Bncd)
 					Chamsesp:Destroy()
 				end
 			elseif Bncd == 4 then
-				local Bespbox = Plr.Character:FindFirstChild("bespbox")
-				if Bespbox then
-					local healthBarHolder = Bespbox:FindFirstChild("healthBarHolder")
-					if healthBarHolder then
-                        healthBarHolder.Parent = workspace
-						healthBarHolder:Destroy()
+				local Torso = Plr.Character:FindFirstChild("Torso") or Plr.Character:FindFirstChild("HumanoidRootPart")
+				if Torso then
+					local Dotesp = Torso:FindFirstChild("dotespbg")
+					if Dotesp then
+						Dotesp:Destroy()
 					end
 				end
 			end
@@ -210,7 +195,7 @@ function UpdateAllEsp()
 				if Config.BoxesOn then CreateBoxEsp(Plr.Character) end
 				if Config.NamesOn then CreateNameEsp(Plr.Character:FindFirstChild("Head")) end
 				if Config.ChamsOn then CreateChamsHighlight(Plr.Character) end
-                if Config.HealthbarOn then CreateHealthEsp(Plr.Character) end
+				if Config.DotsOn then CreateDotEsp(Plr.Character) end
 			end
 		end
 		LastEspUpdate = CT
