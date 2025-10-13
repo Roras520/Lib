@@ -247,5 +247,8 @@ EspModule.GetConfig = GetConfig
 EspModule.EditConfig = EditConfig
 EspModule.UpdateAllEsp = UpdateAllEsp
 EspModule.ClearEsp = ClearEsp
+EspModule.CreateChamsHighlight = CreateChamsHighlight
+EspModule.CreateBoxEsp = CreateBoxEsp
+EspModule.CreateDotEsp = CreateDotEsp
 
 return EspModule
