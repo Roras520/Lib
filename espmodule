@@ -20,7 +20,9 @@ local Config = {
 	DotTransparency = 0.4,
 	BespColor = Color3.fromRGB(0, 170, 255),
 	DespColor = Color3.fromRGB(0, 170, 255),
-	NespColor = Color3.fromRGB(0, 170, 255)
+	NespColor = Color3.fromRGB(0, 170, 255),
+	RLineColor = Color3.new(1, 0, 0),
+	LLineColor = Color3.new(1, 0, 0)
 }
 
 local LocalPlayer = Players.LocalPlayer
