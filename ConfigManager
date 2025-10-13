@@ -4,10 +4,9 @@ end
 local ConfigManager = {}
 _G.ConfigManager = ConfigManager
 
-_G.__ALL_REGISTERED_CONFIGS = _G.__ALL_REGISTERED_CONFIGS or {}
-local RegisteredConfigs = _G.__ALL_REGISTERED_CONFIGS
-
 local HttpService = game:GetService("HttpService")
+
+local RegisteredConfigs = {}
 local Toggled = true
 
 local function Color3ToTable(Color)
@@ -47,6 +46,11 @@ local function Register(ConfigName, ConfigTable, ConfigPath)
         Table = ConfigTable,
         Path = path
     }
+    if not isfile(path) then
+        local data = SerializeTable(ConfigTable)
+        local json = HttpService:JSONEncode(data)
+        writefile(path, json)
+    end
     return true
 end
 
@@ -126,6 +130,62 @@ local function GetConfigInfo(ConfigName)
     }
 end
 
+local function SaveConfigSlot(ConfigName, SlotNumber, FolderName)
+    local Config = RegisteredConfigs[ConfigName]
+    if not Config then warn("ConfigManager - No config registered with name '" .. tostring(ConfigName) .. "'") return false end
+    
+    local slotPath = FolderName .. "/Slot_" .. tostring(SlotNumber) .. ".json"
+    
+    local Success, Result = pcall(function()
+        local Data = SerializeTable(Config.Table)
+        local JsonData = HttpService:JSONEncode(Data)
+        writefile(slotPath, JsonData)
+    end)
+    
+    if not Success then warn("ConfigManager - Slot " .. SlotNumber .. " save failed: " .. tostring(Result)) return false end
+    return true
+end
+
+local function LoadConfigSlot(ConfigName, SlotNumber, FolderName)
+    local Config = RegisteredConfigs[ConfigName]
+    if not Config then warn("ConfigManager - No config registered with name '" .. tostring(ConfigName) .. "'") return false end
+    
+    local slotPath = FolderName .. "/Slot_" .. tostring(SlotNumber) .. ".json"
+    
+    if not isfile(slotPath) then warn("ConfigManager - No slot file found at " .. slotPath) return false end
+    
+    local Success, Result = pcall(function()
+        local JsonData = readfile(slotPath)
+        local Data = HttpService:JSONDecode(JsonData)
+        DeserializeTable(Data, Config.Table)
+    end)
+    
+    if not Success then warn("ConfigManager - Slot " .. SlotNumber .. " load failed: " .. tostring(Result)) return false end
+    return true
+end
+
+local function GetConfigSlots(FolderName)
+    if not isfolder(FolderName) then return {} end
+    
+    local slots = {}
+    for i = 1, 10 do
+        local slotPath = FolderName .. "/Slot_" .. tostring(i) .. ".json"
+        if isfile(slotPath) then
+            table.insert(slots, i)
+        end
+    end
+    return slots
+end
+
+local function DeleteConfigSlot(SlotNumber, FolderName)
+    local slotPath = FolderName .. "/Slot_" .. tostring(SlotNumber) .. ".json"
+    if isfile(slotPath) then
+        delfile(slotPath)
+        return true
+    end
+    return false
+end
+
 ConfigManager.Register = Register
 ConfigManager.Unregister = Unregister
 ConfigManager.SaveConfig = SaveConfig
@@ -136,5 +196,11 @@ ConfigManager.GetRegisteredConfigs = GetRegisteredConfigs
 ConfigManager.IsConfigRegistered = IsConfigRegistered
 ConfigManager.GetConfigInfo = GetConfigInfo
 ConfigManager.Toggle = Toggle
+ConfigManager.SaveConfigSlot = SaveConfigSlot
+ConfigManager.LoadConfigSlot = LoadConfigSlot
+ConfigManager.GetConfigSlots = GetConfigSlots
+ConfigManager.DeleteConfigSlot = DeleteConfigSlot
 
 return ConfigManager
+
+
