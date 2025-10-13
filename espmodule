@@ -13,6 +13,11 @@ local Config = {
 
     -- Colors
 	ChamsColor = Color3.fromRGB(0, 170, 255),
+	ChamsOutlineColor = Color3.fromRGB(0, 85, 128),
+	ChamsFillTransparency = 0.6,
+	ChamsOutlineTransparency = 0.36,
+	BoxTransparency = 0.39,
+	DotTransparency = 0.4,
 	BespColor = Color3.fromRGB(0, 170, 255),
 	DespColor = Color3.fromRGB(0, 170, 255),
 	NespColor = Color3.fromRGB(0, 170, 255)
@@ -41,12 +46,17 @@ end
 function CreateChamsHighlight(Character)
 	local Player = game.Players:GetPlayerFromCharacter(Character)
 	local ChamsColor = ColorCheck(Player, RedC, Config.ChamsColor)
-	local ChamsOutlineColor = ColorMinus(ChamsColor, 15)
+	local ChamsOutlineColor = Config.ChamsOutlineColor or ColorMinus(ChamsColor, 15)
+	local ChamsFillTransparency = Config.ChamsFillTransparency or 0.6
+	local ChamsOutlineTransparency = Config.ChamsOutlineTransparency or 0.36
 	if not Player then return end
 
 	local Existing = Character:FindFirstChild("chamshighlight")
 	if Existing then
 		Existing.FillColor = ChamsColor
+		Existing.OutlineColor = ChamsOutlineColor
+		Existing.FillTransparency = ChamsFillTransparency
+		Existing.OutlineTransparency = ChamsOutlineTransparency
 		return
 	end
 
@@ -54,9 +64,9 @@ function CreateChamsHighlight(Character)
 	Highlight.Name = "chamshighlight"
 	Highlight.Adornee = Character
 	Highlight.FillColor = ChamsColor
-	Highlight.FillTransparency = 0.6
+	Highlight.FillTransparency = ChamsFillTransparency
 	Highlight.OutlineColor = ChamsOutlineColor
-	Highlight.OutlineTransparency = 0.36
+	Highlight.OutlineTransparency = ChamsOutlineTransparency
 	Highlight.Parent = Character
 end
 
@@ -76,7 +86,7 @@ function CreateBoxEsp(Character)
 	Frame.Size = UDim2.new(1, 0, 1, 0)
 	local Stroke = Instance.new("UIStroke", Frame)
 	Stroke.Thickness = 1.67
-	Stroke.Transparency = 0.39
+	Stroke.Transparency = Config.BoxTransparency
 	Stroke.Color = BoxEspColor
 end
 
@@ -108,7 +118,7 @@ function CreateDotEsp(Character)
 	Dotf.Name = "dotf"
 	Dotf.BackgroundColor3 = DotEspColor
 	Dotf.Size = UDim2.new(1, 0, 1, 0)
-	Dotf.Transparency = 0.4
+	Dotf.Transparency = Config.DotTransparency
 	Dotf.BorderSizePixel = 0
 
 	local Dotc = Instance.new("UICorner", Dotf)
@@ -116,6 +126,7 @@ function CreateDotEsp(Character)
 end
 
 function CreateNameEsp(Head)
+    if not Head.Parent then return end
 	local Player = game.Players:GetPlayerFromCharacter(Head.Parent)
 	local NameEspColor = ColorCheck(Player, RedC, Config.NespColor)
 	local Existing = Head:FindFirstChild("nameesp")
