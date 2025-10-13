@@ -56,7 +56,6 @@ function CreateChamsHighlight(Character)
         isTraitor = (LocalPlayer.Team.Name ~= Player.Team.Name)
     end
 
-    -- Now set colors and transparencies:
     local ChamsFillColor, ChamsOutlineColor
     if isTraitor then
         ChamsFillColor = Color3.fromRGB(255, 0, 0)
