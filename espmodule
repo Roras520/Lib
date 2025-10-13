@@ -46,30 +46,45 @@ end
 
 -- ESP Functions
 function CreateChamsHighlight(Character)
-	local Player = game.Players:GetPlayerFromCharacter(Character)
-	local ChamsColor = ColorCheck(Player, RedC, Config.ChamsColor)
-	local ChamsOutlineColor = Config.ChamsOutlineColor or ColorMinus(ChamsColor, 15)
-	local ChamsFillTransparency = Config.ChamsFillTransparency or 0.6
-	local ChamsOutlineTransparency = Config.ChamsOutlineTransparency or 0.36
-	if not Player then return end
+    local Player = game.Players:GetPlayerFromCharacter(Character)
+    if not Player then return end
 
-	local Existing = Character:FindFirstChild("chamshighlight")
-	if Existing then
-		Existing.FillColor = ChamsColor
-		Existing.OutlineColor = ChamsOutlineColor
-		Existing.FillTransparency = ChamsFillTransparency
-		Existing.OutlineTransparency = ChamsOutlineTransparency
-		return
-	end
+    local isTraitor = false
+    if workspace:FindFirstChild("PowerUps") then
+        isTraitor = (Player:GetAttribute("ModeTeam") == "Traitor")
+    elseif LocalPlayer.Team and Player.Team then
+        isTraitor = (LocalPlayer.Team.Name ~= Player.Team.Name)
+    end
 
-	local Highlight = Instance.new("Highlight")
-	Highlight.Name = "chamshighlight"
-	Highlight.Adornee = Character
-	Highlight.FillColor = ChamsColor
-	Highlight.FillTransparency = ChamsFillTransparency
-	Highlight.OutlineColor = ChamsOutlineColor
-	Highlight.OutlineTransparency = ChamsOutlineTransparency
-	Highlight.Parent = Character
+    -- Now set colors and transparencies:
+    local ChamsFillColor, ChamsOutlineColor
+    if isTraitor then
+        ChamsFillColor = Color3.fromRGB(255, 0, 0)
+        ChamsOutlineColor = Color3.fromRGB(255, 0, 0)
+    else
+        ChamsFillColor = Config.ChamsColor or Color3.fromRGB(0, 170, 255)
+        ChamsOutlineColor = Config.ChamsOutlineColor or Color3.fromRGB(0, 85, 128)
+    end
+    local ChamsFillTransparency = Config.ChamsFillTransparency or 0.6
+    local ChamsOutlineTransparency = Config.ChamsOutlineTransparency or 0.36
+
+    local Existing = Character:FindFirstChild("chamshighlight")
+    if Existing then
+        Existing.FillColor = ChamsFillColor
+        Existing.OutlineColor = ChamsOutlineColor
+        Existing.FillTransparency = ChamsFillTransparency
+        Existing.OutlineTransparency = ChamsOutlineTransparency
+        return
+    end
+
+    local Highlight = Instance.new("Highlight")
+    Highlight.Name = "chamshighlight"
+    Highlight.Adornee = Character
+    Highlight.FillColor = ChamsFillColor
+    Highlight.FillTransparency = ChamsFillTransparency
+    Highlight.OutlineColor = ChamsOutlineColor
+    Highlight.OutlineTransparency = ChamsOutlineTransparency
+    Highlight.Parent = Character
 end
 
 function CreateBoxEsp(Character)
