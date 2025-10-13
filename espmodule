@@ -204,7 +204,7 @@ function CreateHealthBar(Character)
 	local Billboard = Instance.new("BillboardGui", Part)
 	Billboard.Name = "healthbaresp"
 	Billboard.Adornee = Part
-	Billboard.Size = UDim2.new(0, 100, 0, 10)
+	Billboard.Size = UDim2.new(0, 50, 0, 6)
 	Billboard.StudsOffset = Vector3.new(0, 3, 0)
 	Billboard.AlwaysOnTop = true
 	
@@ -212,14 +212,19 @@ function CreateHealthBar(Character)
 	HealthBar.Name = "HealthBar"
 	HealthBar.Size = UDim2.new(1, 0, 1, 0)
 	HealthBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-	HealthBar.BorderSizePixel = 1
-	HealthBar.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	HealthBar.BorderSizePixel = 0
+	
+	local HealthBarCorner = Instance.new("UICorner", HealthBar)
+	HealthBarCorner.CornerRadius = UDim.new(0, 3)
 	
 	local Fill = Instance.new("Frame", HealthBar)
 	Fill.Name = "Fill"
 	Fill.Size = UDim2.new(1, 0, 1, 0)
 	Fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 	Fill.BorderSizePixel = 0
+	
+	local FillCorner = Instance.new("UICorner", Fill)
+	FillCorner.CornerRadius = UDim.new(0, 3)
 	
 	if Humanoid then
 		local healthPercent = Humanoid:IsA("Humanoid") and (Humanoid.Health / Humanoid.MaxHealth) or (Humanoid.Value / 100)
