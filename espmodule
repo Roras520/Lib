@@ -10,6 +10,10 @@ local Config = {
 	NamesOn = false,
 	ChamsOn = false,
 	DotsOn = false,
+	HealthBarOn = false,
+	DistanceOn = false,
+	PulseEnabled = false,
+	RainbowEnabled = false,
 
     -- Colors
 	ChamsColor = Color3.fromRGB(0, 170, 255),
@@ -22,7 +26,11 @@ local Config = {
 	DespColor = Color3.fromRGB(0, 170, 255),
 	NespColor = Color3.fromRGB(0, 170, 255),
 	RLineColor = Color3.new(1, 0, 0),
-	LLineColor = Color3.new(1, 0, 0)
+	LLineColor = Color3.new(1, 0, 0),
+	PulsePrimaryColor = Color3.fromRGB(0, 170, 255),
+	PulseSecondaryColor = Color3.fromRGB(0, 255, 170),
+	PulseSpeed = 1,
+	RainbowSpeed = 1
 }
 
 local LocalPlayer = Players.LocalPlayer
@@ -175,6 +183,94 @@ function CreateNameEsp(Head)
 	Namel.TextSize = VRService.VREnabled and 11 or not VRService.VREnabled and 14
 end
 
+function CreateHealthBar(Character)
+	local Part = Character:FindFirstChild("Root") or Character:FindFirstChild("HumanoidRootPart")
+	local Humanoid = Character:FindFirstChild("Humanoid") or Character:FindFirstChild("VRHealth")
+	
+	if not Part or not Humanoid then return end
+	
+	local Existing = Part:FindFirstChild("healthbaresp")
+	if Existing then
+		local HealthBar = Existing:FindFirstChild("HealthBar")
+		local HealthFill = HealthBar and HealthBar:FindFirstChild("Fill")
+		if HealthFill and Humanoid then
+			local healthPercent = Humanoid:IsA("Humanoid") and (Humanoid.Health / Humanoid.MaxHealth) or (Humanoid.Value / 100)
+			HealthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
+			HealthFill.BackgroundColor3 = Color3.fromRGB(255 * (1 - healthPercent), 255 * healthPercent, 0)
+		end
+		return
+	end
+	
+	local Billboard = Instance.new("BillboardGui", Part)
+	Billboard.Name = "healthbaresp"
+	Billboard.Adornee = Part
+	Billboard.Size = UDim2.new(0, 100, 0, 10)
+	Billboard.StudsOffset = Vector3.new(0, 3, 0)
+	Billboard.AlwaysOnTop = true
+	
+	local HealthBar = Instance.new("Frame", Billboard)
+	HealthBar.Name = "HealthBar"
+	HealthBar.Size = UDim2.new(1, 0, 1, 0)
+	HealthBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	HealthBar.BorderSizePixel = 1
+	HealthBar.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	
+	local Fill = Instance.new("Frame", HealthBar)
+	Fill.Name = "Fill"
+	Fill.Size = UDim2.new(1, 0, 1, 0)
+	Fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+	Fill.BorderSizePixel = 0
+	
+	if Humanoid then
+		local healthPercent = Humanoid:IsA("Humanoid") and (Humanoid.Health / Humanoid.MaxHealth) or (Humanoid.Value / 100)
+		Fill.Size = UDim2.new(healthPercent, 0, 1, 0)
+		Fill.BackgroundColor3 = Color3.fromRGB(255 * (1 - healthPercent), 255 * healthPercent, 0)
+	end
+end
+
+function CreateDistanceDisplay(Character)
+	local Part = Character:FindFirstChild("Root") or Character:FindFirstChild("HumanoidRootPart")
+	if not Part then return end
+	
+	local Existing = Part:FindFirstChild("distanceesp")
+	if Existing then
+		local DistLabel = Existing:FindFirstChild("DistanceText")
+		if DistLabel and LocalPlayer.Character then
+			local LocalRoot = LocalPlayer.Character:FindFirstChild("Root") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+			if LocalRoot then
+				local distance = math.floor((LocalRoot.Position - Part.Position).Magnitude)
+				DistLabel.Text = tostring(distance) .. " studs"
+			end
+		end
+		return
+	end
+	
+	local Billboard = Instance.new("BillboardGui", Part)
+	Billboard.Name = "distanceesp"
+	Billboard.Adornee = Part
+	Billboard.Size = UDim2.new(0, 100, 0, 20)
+	Billboard.StudsOffset = Vector3.new(0, 2.3, 0)
+	Billboard.AlwaysOnTop = true
+	
+	local DistLabel = Instance.new("TextLabel", Billboard)
+	DistLabel.Name = "DistanceText"
+	DistLabel.Size = UDim2.new(1, 0, 1, 0)
+	DistLabel.BackgroundTransparency = 1
+	DistLabel.Text = "0 studs"
+	DistLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	DistLabel.TextStrokeTransparency = 0.5
+	DistLabel.Font = Enum.Font.SourceSansBold
+	DistLabel.TextSize = VRService.VREnabled and 10 or 12
+	
+	if LocalPlayer.Character then
+		local LocalRoot = LocalPlayer.Character:FindFirstChild("Root") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+		if LocalRoot then
+			local distance = math.floor((LocalRoot.Position - Part.Position).Magnitude)
+			DistLabel.Text = tostring(distance) .. " studs"
+		end
+	end
+end
+
 function ClearEsp(Bncd)
 	if not LocalPlayer then
 		return
@@ -207,15 +303,37 @@ function ClearEsp(Bncd)
 						Dotesp:Destroy()
 					end
 				end
+			elseif Bncd == 5 then
+				local Part = Plr.Character:FindFirstChild("Root") or Plr.Character:FindFirstChild("HumanoidRootPart")
+				if Part then
+					local HealthBar = Part:FindFirstChild("healthbaresp")
+					if HealthBar then
+						HealthBar:Destroy()
+					end
+				end
+			elseif Bncd == 6 then
+				local Part = Plr.Character:FindFirstChild("Root") or Plr.Character:FindFirstChild("HumanoidRootPart")
+				if Part then
+					local Distance = Part:FindFirstChild("distanceesp")
+					if Distance then
+						Distance:Destroy()
+					end
+				end
 			end
 		end
 	end
 end
 
 local LastEspUpdate = 0
+local RainbowHue = 0
 function UpdateAllEsp()
 	if not Config.EspEnabled then return end
 	local CT = tick()
+	
+	if Config.RainbowEnabled then
+		RainbowHue = (RainbowHue + (0.01 * Config.RainbowSpeed)) % 1
+	end
+	
 	if CT - LastEspUpdate >= 2 then
 		for _, Plr in pairs(game.Players:GetPlayers()) do
 			if Plr.Name ~= LocalPlayerName and Plr.Character then
@@ -223,9 +341,83 @@ function UpdateAllEsp()
 				if Config.NamesOn then CreateNameEsp(Plr.Character:FindFirstChild("Head")) end
 				if Config.ChamsOn then CreateChamsHighlight(Plr.Character) end
 				if Config.DotsOn then CreateDotEsp(Plr.Character) end
+				if Config.HealthBarOn then CreateHealthBar(Plr.Character) end
+				if Config.DistanceOn then CreateDistanceDisplay(Plr.Character) end
 			end
 		end
 		LastEspUpdate = CT
+	end
+	
+	if Config.HealthBarOn or Config.DistanceOn then
+		for _, Plr in pairs(game.Players:GetPlayers()) do
+			if Plr.Name ~= LocalPlayerName and Plr.Character then
+				if Config.HealthBarOn then CreateHealthBar(Plr.Character) end
+				if Config.DistanceOn then CreateDistanceDisplay(Plr.Character) end
+			end
+		end
+	end
+	
+	if Config.PulseEnabled then
+		ApplyPulseEffect()
+	end
+	
+	if Config.RainbowEnabled then
+		ApplyRainbowEffect()
+	end
+end
+
+function ApplyPulseEffect()
+	local pulseValue = (math.sin(tick() * Config.PulseSpeed * 2) + 1) / 2
+	local pulseColor = Config.PulsePrimaryColor:Lerp(Config.PulseSecondaryColor, pulseValue)
+	
+	for _, Plr in pairs(game.Players:GetPlayers()) do
+		if Plr.Name ~= LocalPlayerName and Plr.Character then
+			local Chams = Plr.Character:FindFirstChild("chamshighlight")
+			if Chams then
+				Chams.FillColor = pulseColor
+			end
+			
+			local Box = Plr.Character:FindFirstChild("bespbox")
+			if Box then
+				local Stroke = Box:FindFirstChild("Frame") and Box.Frame:FindFirstChild("UIStroke")
+				if Stroke then
+					Stroke.Color = pulseColor
+				end
+			end
+		end
+	end
+end
+
+function ApplyRainbowEffect()
+	local rainbowColor = Color3.fromHSV(RainbowHue, 1, 1)
+	
+	for _, Plr in pairs(game.Players:GetPlayers()) do
+		if Plr.Name ~= LocalPlayerName and Plr.Character then
+			local Chams = Plr.Character:FindFirstChild("chamshighlight")
+			if Chams then
+				Chams.FillColor = rainbowColor
+				Chams.OutlineColor = rainbowColor
+			end
+			
+			local Box = Plr.Character:FindFirstChild("bespbox")
+			if Box then
+				local Stroke = Box:FindFirstChild("Frame") and Box.Frame:FindFirstChild("UIStroke")
+				if Stroke then
+					Stroke.Color = rainbowColor
+				end
+			end
+			
+			local Head = Plr.Character:FindFirstChild("Head")
+			if Head then
+				local NameEsp = Head:FindFirstChild("nameesp")
+				if NameEsp then
+					local NameLabel = NameEsp:FindFirstChild("NAME")
+					if NameLabel then
+						NameLabel.TextColor3 = rainbowColor
+					end
+				end
+			end
+		end
 	end
 end
 
@@ -249,5 +441,7 @@ EspModule.ClearEsp = ClearEsp
 EspModule.CreateChamsHighlight = CreateChamsHighlight
 EspModule.CreateBoxEsp = CreateBoxEsp
 EspModule.CreateDotEsp = CreateDotEsp
+EspModule.CreateHealthBar = CreateHealthBar
+EspModule.CreateDistanceDisplay = CreateDistanceDisplay
 
 return EspModule
