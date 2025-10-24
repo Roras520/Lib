@@ -103,10 +103,17 @@ function CreateBoxEsp(Character)
 	Billboard.Name = "bespbox"
 	Billboard.Adornee = Character:FindFirstChild("Torso") or Character.PrimaryPart
 	Billboard.Size = UDim2.new(4, 0, 5, 0)
-	Billboard.StudsOffset = Vector3.new(0, 0.4, 0)
+	Billboard.StudsOffset = Vector3.new(0, 0.4000000059604645, 0)
+	Billboard.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	Billboard.Active = true
+	Billboard.LightInfluence = 1
 	Billboard.AlwaysOnTop = true
 	local Frame = Instance.new("Frame", Billboard)
-	Frame.BackgroundTransparency = 1
+	Frame.Name = "boxEspFrame"
+	Frame.BackgroundColor3 = Color3.new(1, 1, 1)
+	Frame.BackgroundTransparency = 0.75
+	Frame.BorderColor3 = Color3.new(0, 0, 0)
+	Frame.BorderSizePixel = 0
 	Frame.Size = UDim2.new(1, 0, 1, 0)
 	local Stroke = Instance.new("UIStroke", Frame)
 	Stroke.Thickness = 1.67
@@ -156,7 +163,7 @@ function CreateNameEsp(Head)
 	local Existing = Head:FindFirstChild("nameesp")
 	
 	if Existing then
-		local NameLabel = Existing:FindFirstChild("NAME")
+		local NameLabel = Existing:FindFirstChild("nameEspLabel")
 		if NameLabel then
 			NameLabel.TextColor3 = NameEspColor
 		end
@@ -166,21 +173,26 @@ function CreateNameEsp(Head)
 	local Nespbgui = Instance.new("BillboardGui")
 	Nespbgui.Name = "nameesp"
 	Nespbgui.Adornee = Head
-	Nespbgui.AlwaysOnTop = true
-	Nespbgui.ExtentsOffset = Vector3.new(0, 4, 0)
-	Nespbgui.Size = UDim2.new(0, 200, 0, 20)
+	Nespbgui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	Nespbgui.Active = true
+	Nespbgui.ExtentsOffsetWorldSpace = Vector3.new(0, 4, 0)
+	Nespbgui.LightInfluence = 1
+	Nespbgui.Size = UDim2.new(0, 200, 0, 50)
 	Nespbgui.Parent = Head
 	
 	local Namel = Instance.new("TextLabel", Nespbgui)
-	Namel.Size = UDim2.new(1, 0, 0.3, 0)
-	Namel.Name = "NAME"
-	Namel.BorderSizePixel = 0
+	Namel.Name = "nameEspLabel"
+	Namel.Size = UDim2.new(0, 200, 0, 50)
+	Namel.BackgroundColor3 = Color3.new(1, 1, 1)
 	Namel.BackgroundTransparency = 1
+	Namel.BorderColor3 = Color3.new(0, 0, 0)
+	Namel.BorderSizePixel = 0
 	Namel.Text = Player.Name and Player.Name:upper()
 	Namel.TextColor3 = NameEspColor
-	Namel.TextStrokeTransparency = 0.5
-	Namel.Font = Enum.Font.SourceSansBold
-	Namel.TextSize = VRService.VREnabled and 11 or not VRService.VREnabled and 14
+	Namel.TextStrokeTransparency = 0.3799999952316284
+	Namel.Font = Enum.Font.RobotoMono
+	Namel.TextSize = 15
+	Namel.TextWrapped = true
 end
 
 function CreateHealthBar(Character)
@@ -191,8 +203,8 @@ function CreateHealthBar(Character)
 	
 	local Existing = Part:FindFirstChild("healthbaresp")
 	if Existing then
-		local HealthBar = Existing:FindFirstChild("HealthBar")
-		local HealthFill = HealthBar and HealthBar:FindFirstChild("Fill")
+		local HealthBar = Existing:FindFirstChild("healthBarBackgroundFrame")
+		local HealthFill = HealthBar and HealthBar:FindFirstChild("healthBarFill")
 		if HealthFill and Humanoid then
 			local healthPercent = Humanoid:IsA("Humanoid") and (Humanoid.Health / Humanoid.MaxHealth) or (Humanoid.Value / 100)
 			HealthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
@@ -204,23 +216,28 @@ function CreateHealthBar(Character)
 	local Billboard = Instance.new("BillboardGui", Part)
 	Billboard.Name = "healthbaresp"
 	Billboard.Adornee = Part
-	Billboard.Size = UDim2.new(0, 50, 0, 6)
-	Billboard.StudsOffset = Vector3.new(0, 3, 0)
+	Billboard.Size = UDim2.new(0, 6, 5, 0)
+	Billboard.StudsOffset = Vector3.new(-2.200000047683716, 0.4000000059604645, 0)
+	Billboard.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	Billboard.Active = true
+	Billboard.LightInfluence = 1
 	Billboard.AlwaysOnTop = true
 	
 	local HealthBar = Instance.new("Frame", Billboard)
-	HealthBar.Name = "HealthBar"
+	HealthBar.Name = "healthBarBackgroundFrame"
 	HealthBar.Size = UDim2.new(1, 0, 1, 0)
-	HealthBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	HealthBar.BackgroundColor3 = Color3.new(0.196078, 0.196078, 0.196078)
+	HealthBar.BorderColor3 = Color3.new(0, 0, 0)
 	HealthBar.BorderSizePixel = 0
 	
 	local HealthBarCorner = Instance.new("UICorner", HealthBar)
 	HealthBarCorner.CornerRadius = UDim.new(0, 3)
 	
 	local Fill = Instance.new("Frame", HealthBar)
-	Fill.Name = "Fill"
+	Fill.Name = "healthBarFill"
 	Fill.Size = UDim2.new(1, 0, 1, 0)
-	Fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+	Fill.BackgroundColor3 = Color3.new(0, 1, 0)
+	Fill.BorderColor3 = Color3.new(0, 0, 0)
 	Fill.BorderSizePixel = 0
 	
 	local FillCorner = Instance.new("UICorner", Fill)
@@ -239,12 +256,12 @@ function CreateDistanceDisplay(Character)
 	
 	local Existing = Part:FindFirstChild("distanceesp")
 	if Existing then
-		local DistLabel = Existing:FindFirstChild("DistanceText")
+		local DistLabel = Existing:FindFirstChild("distanceEspLabel")
 		if DistLabel and LocalPlayer.Character then
 			local LocalRoot = LocalPlayer.Character:FindFirstChild("Root") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 			if LocalRoot then
 				local distance = math.floor((LocalRoot.Position - Part.Position).Magnitude)
-				DistLabel.Text = tostring(distance) .. " studs"
+				DistLabel.Text = "[" .. tostring(distance) .. "]"
 			end
 		end
 		return
@@ -253,25 +270,32 @@ function CreateDistanceDisplay(Character)
 	local Billboard = Instance.new("BillboardGui", Part)
 	Billboard.Name = "distanceesp"
 	Billboard.Adornee = Part
-	Billboard.Size = UDim2.new(0, 100, 0, 20)
-	Billboard.StudsOffset = Vector3.new(0, 2.3, 0)
+	Billboard.Size = UDim2.new(0, 200, 0, 50)
+	Billboard.StudsOffset = Vector3.new(0, -2.5, 0)
+	Billboard.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+	Billboard.Active = true
+	Billboard.LightInfluence = 1
 	Billboard.AlwaysOnTop = true
 	
 	local DistLabel = Instance.new("TextLabel", Billboard)
-	DistLabel.Name = "DistanceText"
-	DistLabel.Size = UDim2.new(1, 0, 1, 0)
+	DistLabel.Name = "distanceEspLabel"
+	DistLabel.Size = UDim2.new(0, 200, 0, 50)
+	DistLabel.BackgroundColor3 = Color3.new(1, 1, 1)
 	DistLabel.BackgroundTransparency = 1
-	DistLabel.Text = "0 studs"
-	DistLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	DistLabel.TextStrokeTransparency = 0.5
-	DistLabel.Font = Enum.Font.SourceSansBold
-	DistLabel.TextSize = VRService.VREnabled and 10 or 12
+	DistLabel.BorderColor3 = Color3.new(0, 0, 0)
+	DistLabel.BorderSizePixel = 0
+	DistLabel.Font = Enum.Font.RobotoMono
+	DistLabel.Text = "[150]"
+	DistLabel.TextColor3 = Color3.new(1, 1, 1)
+	DistLabel.TextSize = 14
+	DistLabel.TextStrokeTransparency = 0.3799999952316284
+	DistLabel.TextWrapped = true
 	
 	if LocalPlayer.Character then
 		local LocalRoot = LocalPlayer.Character:FindFirstChild("Root") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 		if LocalRoot then
 			local distance = math.floor((LocalRoot.Position - Part.Position).Magnitude)
-			DistLabel.Text = tostring(distance) .. " studs"
+			DistLabel.Text = "[" .. tostring(distance) .. "]"
 		end
 	end
 end
