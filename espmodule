@@ -205,7 +205,7 @@ function CreateHealthBar(Character)
 	Billboard.Name = "healthbaresp"
 	Billboard.Adornee = Part
 	Billboard.Size = UDim2.new(0, 50, 0, 6)
-	Billboard.StudsOffset = Vector3.new(0, -3.5, 0)
+	Billboard.StudsOffset = Vector3.new(0, -2.5, 0)
 	Billboard.AlwaysOnTop = true
 	
 	local HealthBar = Instance.new("Frame", Billboard)
@@ -241,9 +241,9 @@ function CreateDistanceDisplay(Character)
 	if Existing then
 		local DistLabel = Existing:FindFirstChild("DistanceText")
 		if DistLabel and LocalPlayer.Character then
-			local LocalRoot = LocalPlayer.Character:FindFirstChild("Root") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-			if LocalRoot then
-				local distance = math.floor((LocalRoot.Position - Part.Position).Magnitude)
+			local localTorso = LocalPlayer.Character:FindFirstChild("Torso") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+			if localTorso then
+				local distance = math.floor((localTorso.Position - Part.Position).Magnitude)
 				DistLabel.Text = tostring(distance) .. " studs"
 			end
 		end
@@ -268,9 +268,9 @@ function CreateDistanceDisplay(Character)
 	DistLabel.TextSize = VRService.VREnabled and 10 or 12
 	
 	if LocalPlayer.Character then
-		local LocalRoot = LocalPlayer.Character:FindFirstChild("Root") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-		if LocalRoot then
-			local distance = math.floor((LocalRoot.Position - Part.Position).Magnitude)
+		local localTorso = LocalPlayer.Character:FindFirstChild("Torso") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+		if localTorso then
+			local distance = math.floor((localTorso.Position - Part.Position).Magnitude)
 			DistLabel.Text = tostring(distance) .. " studs"
 		end
 	end
