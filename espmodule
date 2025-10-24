@@ -184,7 +184,7 @@ function CreateNameEsp(Head)
 end
 
 function CreateHealthBar(Character)
-	local Part = Character:FindFirstChild("Root") or Character:FindFirstChild("HumanoidRootPart")
+	local Part = Character:FindFirstChild("Torso") or Character:FindFirstChild("HumanoidRootPart")
 	local Humanoid = Character:FindFirstChild("Humanoid") or Character:FindFirstChild("VRHealth")
 	
 	if not Part or not Humanoid then return end
@@ -205,7 +205,7 @@ function CreateHealthBar(Character)
 	Billboard.Name = "healthbaresp"
 	Billboard.Adornee = Part
 	Billboard.Size = UDim2.new(0, 50, 0, 6)
-	Billboard.StudsOffset = Vector3.new(0, -1.2, 0)
+	Billboard.StudsOffset = Vector3.new(0, -2.2, 0)
 	Billboard.AlwaysOnTop = true
 	
 	local HealthBar = Instance.new("Frame", Billboard)
@@ -234,7 +234,7 @@ function CreateHealthBar(Character)
 end
 
 function CreateDistanceDisplay(Character)
-	local Part = Character:FindFirstChild("Root") or Character:FindFirstChild("HumanoidRootPart")
+	local Part = Character:FindFirstChild("Torso") or Character:FindFirstChild("HumanoidRootPart")
 	if not Part then return end
 	
 	local Existing = Part:FindFirstChild("distanceesp")
@@ -254,7 +254,7 @@ function CreateDistanceDisplay(Character)
 	Billboard.Name = "distanceesp"
 	Billboard.Adornee = Part
 	Billboard.Size = UDim2.new(0, 100, 0, 20)
-	Billboard.StudsOffset = Vector3.new(0, -2, 0)
+	Billboard.StudsOffset = Vector3.new(0, -3, 0)
 	Billboard.AlwaysOnTop = true
 	
 	local DistLabel = Instance.new("TextLabel", Billboard)
