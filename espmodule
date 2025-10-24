@@ -244,7 +244,7 @@ function CreateDistanceDisplay(Character)
 			local localTorso = LocalPlayer.Character:FindFirstChild("Torso") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 			if localTorso then
 				local distance = math.floor((localTorso.Position - Part.Position).Magnitude)
-				DistLabel.Text = tostring(distance) .. " studs"
+				DistLabel.Text = "[" .. tostring(distance) .. "]"
 			end
 		end
 		return
