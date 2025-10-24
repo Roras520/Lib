@@ -254,7 +254,7 @@ function CreateDistanceDisplay(Character)
 	Billboard.Name = "distanceesp"
 	Billboard.Adornee = Part
 	Billboard.Size = UDim2.new(0, 100, 0, 20)
-	Billboard.StudsOffset = Vector3.new(0, 2.8, 0)
+	Billboard.StudsOffset = Vector3.new(0, 3, 0)
 	Billboard.AlwaysOnTop = true
 	
 	local DistLabel = Instance.new("TextLabel", Billboard)
