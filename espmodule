@@ -205,7 +205,7 @@ function CreateHealthBar(Character)
 	Billboard.Name = "healthbaresp"
 	Billboard.Adornee = Part
 	Billboard.Size = UDim2.new(0, 50, 0, 6)
-	Billboard.StudsOffset = Vector3.new(0, -2.5, 0)
+	Billboard.StudsOffset = Vector3.new(0, -1.2, 0)
 	Billboard.AlwaysOnTop = true
 	
 	local HealthBar = Instance.new("Frame", Billboard)
@@ -254,24 +254,24 @@ function CreateDistanceDisplay(Character)
 	Billboard.Name = "distanceesp"
 	Billboard.Adornee = Part
 	Billboard.Size = UDim2.new(0, 100, 0, 20)
-	Billboard.StudsOffset = Vector3.new(0, -3, 0)
+	Billboard.StudsOffset = Vector3.new(0, -2, 0)
 	Billboard.AlwaysOnTop = true
 	
 	local DistLabel = Instance.new("TextLabel", Billboard)
 	DistLabel.Name = "DistanceText"
 	DistLabel.Size = UDim2.new(1, 0, 1, 0)
 	DistLabel.BackgroundTransparency = 1
-	DistLabel.Text = "0 studs"
+	DistLabel.Text = "[0]"
 	DistLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 	DistLabel.TextStrokeTransparency = 0.5
-	DistLabel.Font = Enum.Font.SourceSansBold
+	DistLabel.Font = Enum.Font.RobotoMono
 	DistLabel.TextSize = VRService.VREnabled and 10 or 12
 	
 	if LocalPlayer.Character then
 		local localTorso = LocalPlayer.Character:FindFirstChild("Torso") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 		if localTorso then
 			local distance = math.floor((localTorso.Position - Part.Position).Magnitude)
-			DistLabel.Text = tostring(distance) .. " studs"
+			DistLabel.Text = "[" .. tostring(distance) .. "]"
 		end
 	end
 end
