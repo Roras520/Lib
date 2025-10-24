@@ -103,7 +103,7 @@ function CreateBoxEsp(Character)
 	Billboard.Name = "bespbox"
 	Billboard.Adornee = Character:FindFirstChild("Torso") or Character.PrimaryPart
 	Billboard.Size = UDim2.new(4, 0, 5, 0)
-	Billboard.StudsOffset = Vector3.new(0, 0.4000000059604645, 0)
+	Billboard.StudsOffset = Vector3.new(0, -0.4, 0)
 	Billboard.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	Billboard.Active = true
 	Billboard.LightInfluence = 1
@@ -206,7 +206,7 @@ function CreateHealthBar(Character)
 		local HealthFill = HealthBar and HealthBar:FindFirstChild("healthBarFill")
 		if HealthFill and Humanoid then
 			local healthPercent = Humanoid:IsA("Humanoid") and (Humanoid.Health / Humanoid.MaxHealth) or (Humanoid.Value / 100)
-			HealthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
+			HealthFill.Size = UDim2.new(1, 0, healthPercent, 0)
 			HealthFill.BackgroundColor3 = Color3.fromRGB(255 * (1 - healthPercent), 255 * healthPercent, 0)
 		end
 		return
@@ -216,7 +216,7 @@ function CreateHealthBar(Character)
 	Billboard.Name = "healthbaresp"
 	Billboard.Adornee = Part
 	Billboard.Size = UDim2.new(0, 6, 5, 0)
-	Billboard.StudsOffset = Vector3.new(-2.200000047683716, 0.6, 0)
+	Billboard.StudsOffset = Vector3.new(-2.200000047683716, -0.4, 0)
 	Billboard.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	Billboard.Active = true
 	Billboard.LightInfluence = 1
