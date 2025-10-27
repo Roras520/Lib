@@ -1,227 +1,280 @@
-local NotificationModule = {}
+local notifications = {}
+local isVRUpdateBound = false
+local existingInstance = _G.Stack_NotificationsLibrary ~= nil
 
---// Services
-local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
-local VRService = game:GetService("VRService")
-local RunService = game:GetService("RunService")
-local Utils = loadstring(game:HttpGet("https://raw.githubusercontent.com/Number2189/UI/refs/heads/main/Utils"))()
+local TWEEN_DURATION = 0.3
+local CORNER_RADIUS = 6
+local FADE_OUT_X_POSITION = 1
+local FADE_OUT_OFFSET = 20
 
---// Player & GUI References
-local LocalPlayer = Players.LocalPlayer
-local Cgui = RunService:IsStudio() and LocalPlayer.PlayerGui or game:GetService("CoreGui")
-local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local LocalHead = Character:FindFirstChild("Head")
-if not LocalHead then return end
-
-local NotificationSettings = {
-	MaxNotifications = 5,
-	Cooldown = 0.6,
-	MessageLifetime = 4,
-	SizePC = UDim2.new(0, 250, 0, 60),
-	SizeVR = Vector3.new(2, 1, 0.1),
-	TextColor = Color3.fromRGB(255, 255, 255),
-	Font = Enum.Font.Code,
-	TextSizePC = 28,
-	TextSizeVR = 30.47,
-	SpacingPC = 8,
-	SpacingVR = 0.75,
-	VROffset = Vector3.new(0, 1.06, 3),
-	UpdateInterval = 0.5,
-	Enabled = true,
-}
-
-local NotificationState = {
-	Queue = {},
-	LastSendTime = 0,
-	ActiveCount = 0,
-}
-
-NotificationModule.GetNotificationSettings = function()
-	return NotificationSettings
-end
-
---// VR Notification Construction
-local VrPart = Instance.new("Part")
-VrPart.Anchored = false
-VrPart.CanCollide = false
-VrPart.CanQuery = false
-VrPart.CanTouch = false
-VrPart.Massless = true
-VrPart.Transparency = 1
-VrPart.Size = NotificationSettings.SizeVR
-VrPart.Parent = workspace
-
-local VrGui = Instance.new("SurfaceGui")
-VrGui.Face = Enum.NormalId.Back
-VrGui.Adornee = VrPart
-VrGui.AlwaysOnTop = true
-VrGui.Parent = VrPart
-
-local VrText = Instance.new("TextLabel")
-VrText.BackgroundTransparency = VRService.VREnabled and 1 or 0.5
-VrText.TextColor3 = NotificationSettings.TextColor
-VrText.Font = NotificationSettings.Font
-VrText.TextSize = NotificationSettings.TextSizeVR
-VrText.Size = UDim2.new(1, 0, 1, 0)
-VrText.TextYAlignment = Enum.TextYAlignment.Top
-VrText.Visible = false
-VrText.Parent = VrGui
-
---// PC Notification
-local PcGui = Instance.new("ScreenGui")
-PcGui.IgnoreGuiInset = true
-PcGui.Parent = Cgui
-
-local PcFrame = Instance.new("Frame")
-PcFrame.BackgroundTransparency = 1
-PcFrame.Size = UDim2.new(0, 320, 0, 300 + 70 * NotificationSettings.MaxNotifications)
-PcFrame.AnchorPoint = Vector2.new(1, 1)
-PcFrame.Position = UDim2.new(0.98, 0, 0.98, 0)
-PcFrame.Parent = PcGui
-
-local PcList = Instance.new("UIListLayout")
-PcList.Padding = UDim.new(0, NotificationSettings.SpacingPC)
-PcList.SortOrder = Enum.SortOrder.LayoutOrder
-PcList.VerticalAlignment = Enum.VerticalAlignment.Bottom
-PcList.HorizontalAlignment = Enum.HorizontalAlignment.Right
-PcList.Parent = PcFrame
-
---// VR Functions
-local function UpdateVR()
-	local ct = tick()
-	local lifetime = NotificationSettings.MessageLifetime or 4
-	local maxNotifs = NotificationSettings.MaxNotifications or 5
-
-	for i = #NotificationState.Queue, 1, -1 do
-		if NotificationState.Queue[i] and ct - NotificationState.Queue[i].time > lifetime then
-			table.remove(NotificationState.Queue, i)
+local function Init()
+	local Players = game:GetService("Players")
+	local TweenService = game:GetService("TweenService")
+	local VRService = game:GetService("VRService")
+	local RunService = game:GetService("RunService")
+	
+	local utilsLoaded, Utils = pcall(function()
+		return loadstring(game:HttpGet("https://raw.githubusercontent.com/Number2189/UI/refs/heads/main/Utils"))()
+	end)
+	
+	if not utilsLoaded then
+		warn("Failed to load Utils:", Utils)
+		return nil
+	end
+	
+	local LocalPlayer = Players.LocalPlayer
+	local Cgui = RunService:IsStudio() and LocalPlayer.PlayerGui or game:GetService("CoreGui")
+	
+	local characterLoaded, Character = pcall(function()
+		return LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	end)
+	
+	if not characterLoaded then
+		warn("Failed to get character:", Character)
+		return nil
+	end
+	
+	local LocalHead = Character:FindFirstChild("Head")
+	
+	local NotificationSettings = {
+		MaxNotifications = 5,
+		Cooldown = 0.6,
+		MessageLifetime = 4,
+		SizePC = UDim2.new(0, 250, 0, 60),
+		SizeVR = Vector3.new(2, 1, 0.1),
+		TextColor = Color3.fromRGB(255, 255, 255),
+		Font = Enum.Font.Code,
+		TextSizePC = 28,
+		TextSizeVR = 30.47,
+		SpacingPC = 8,
+		SpacingVR = 0.75,
+		VROffset = Vector3.new(0, 1.06, 3),
+		Enabled = true,
+	}
+	
+	local NotificationState = {
+		Queue = {},
+		LastSendTime = 0,
+		ActiveCount = 0,
+	}
+	
+	local PcGui, PcFrame, VrPart, VrGui, VrText
+	local VREnabled = false
+	local VRErrorReason = ""
+	local ErrorNotifSent = false
+	
+	local function UpdateVR()
+		local ct = tick()
+		local lifetime = NotificationSettings.MessageLifetime
+		local maxNotifs = NotificationSettings.MaxNotifications
+		
+		for i = #NotificationState.Queue, 1, -1 do
+			if NotificationState.Queue[i] and ct - NotificationState.Queue[i].time > lifetime then
+				table.remove(NotificationState.Queue, i)
+				NotificationState.ActiveCount -= 1
+			end
+		end
+		
+		while #NotificationState.Queue > maxNotifs do
+			table.remove(NotificationState.Queue, 1)
 			NotificationState.ActiveCount -= 1
 		end
-	end
-	while #NotificationState.Queue > maxNotifs do
-		table.remove(NotificationState.Queue, 1)
-		NotificationState.ActiveCount -= 1
-	end
-	local lines = {}
-	for _, entry in ipairs(NotificationState.Queue) do
-		table.insert(lines, entry.text)
-	end
-	VrText.Text = table.concat(lines, "\n")
-end
-
-local function SendVR(message)
-	if not (NotificationSettings.Enabled and VRService.VREnabled) then return end
-	if tick() - NotificationState.LastSendTime < NotificationSettings.Cooldown then return end
-	NotificationState.LastSendTime = tick()
-	NotificationState.ActiveCount += 1
-	table.insert(NotificationState.Queue, { text = message, time = tick() })
-	UpdateVR()
-end
-
---// PC Functions
-local function FadeOutNotification(Frame, Title, Message, Stroke)
-	local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.In)
-	Utils.Tween(Frame, { Position = UDim2.new(1, 20, 0, 0), BackgroundTransparency = 1 }, 0.3, Enum.EasingStyle.Quart):Play()
-	Utils.Tween(Title, { TextTransparency = 1 }, 0.3, Enum.EasingStyle.Quart):Play()
-	Utils.Tween(Message, { TextTransparency = 1 }, 0.3, Enum.EasingStyle.Quart):Play()
-	if Stroke then Utils.Tween(Stroke, { Transparency = 1 }, 0.3, Enum.EasingStyle.Quart):Play() end
-	task.delay(tweenInfo.Time, function()
-		Frame:Destroy()
-		NotificationState.ActiveCount -= 1
-	end)
-end
-
-local function SendPC(message, titleText)
-	local settings = NotificationSettings
-	if not (settings.Enabled ~= false) or VRService.VREnabled then return end
-	if tick() - NotificationState.LastSendTime < (settings.Cooldown or 0.6) then return end
-	if NotificationState.ActiveCount >= (settings.MaxNotifications or 5) then return end
-
-	local Notif = Instance.new("Frame")
-	Notif.Name = "Notif"
-	Notif.Parent = PcFrame
-	Notif.BackgroundColor3 = Color3.new(0.0784314, 0.0784314, 0.0980392)
-	Notif.BackgroundTransparency = 0.25
-	Notif.BorderColor3 = Color3.new(0, 0, 0)
-	Notif.BorderSizePixel = 0
-	Notif.Position = UDim2.new(0.698148131, 0, 0.91481483, 0)
-	Notif.Size = UDim2.new(0, 298, 0, 51)
-	Utils.CreateCorner(Notif, 6)
-
-	local Title = Instance.new("TextLabel")
-	Title.Name = "Title"
-	Title.Parent = Notif
-	Title.BackgroundColor3 = Color3.new(1, 1, 1)
-	Title.BackgroundTransparency = 1
-	Title.BorderColor3 = Color3.new(0, 0, 0)
-	Title.BorderSizePixel = 0
-	Title.Position = UDim2.new(0.0449179821, 0, 0.156111494, 0)
-	Title.Size = UDim2.new(0, 310, 0, 17)
-	Title.Font = Enum.Font.SourceSansSemibold
-	Title.Text = titleText or "Title"
-	Title.TextColor3 = Color3.new(1, 1, 1)
-	Title.TextSize = 16
-	Title.TextXAlignment = Enum.TextXAlignment.Left
-
-	local Description = Instance.new("TextLabel")
-	Description.Name = "Description"
-	Description.Parent = Notif
-	Description.BackgroundColor3 = Color3.new(1, 1, 1)
-	Description.BackgroundTransparency = 1
-	Description.BorderColor3 = Color3.new(0, 0, 0)
-	Description.BorderSizePixel = 0
-	Description.Position = UDim2.new(0.0432063378, 0, 0.502512991, 0)
-	Description.Size = UDim2.new(0, 301, 0, 17)
-	Description.Font = Enum.Font.SourceSans
-	Description.Text = message or ""
-	Description.TextColor3 = Color3.new(1, 1, 1)
-	Description.TextSize = 14
-	Description.TextXAlignment = Enum.TextXAlignment.Left
-
-	NotificationState.LastSendTime = tick()
-	NotificationState.ActiveCount += 1
-	task.delay(settings.MessageLifetime or 4, function()
-		if Notif.Parent then
-			FadeOutNotification(Notif, Title, Description)
+		
+		local lines = {}
+		for _, entry in ipairs(NotificationState.Queue) do
+			table.insert(lines, entry.text)
 		end
-	end)
-end
-
---// Library Functions
-NotificationModule.SendNotification = function(message, titleText)
-	if VRService.VREnabled then
-		SendVR(message)
-	else
-		SendPC(message, titleText)
-	end
-end
-
-NotificationModule.ClearNotifications = function()
-	for _, child in ipairs(PcFrame:GetChildren()) do
-		if child:IsA("Frame") then
-			child:Destroy()
+		
+		if VrText then
+			VrText.Text = table.concat(lines, "\n")
+			VrText.Visible = NotificationSettings.Enabled and #NotificationState.Queue > 0
 		end
 	end
+	
+	local function SendPC(message, titleText)
+		if not NotificationSettings.Enabled then return end
+		if VRService.VREnabled and VREnabled then return end
+		if tick() - NotificationState.LastSendTime < NotificationSettings.Cooldown then return end
+		if NotificationState.ActiveCount >= NotificationSettings.MaxNotifications then return end
+		
+		local Notif = Instance.new("Frame")
+		Notif.Name = "Notif"
+		Notif.Parent = PcFrame
+		Notif.BackgroundColor3 = Color3.new(0.0784314, 0.0784314, 0.0980392)
+		Notif.BackgroundTransparency = 0.25
+		Notif.BorderColor3 = Color3.new(0, 0, 0)
+		Notif.BorderSizePixel = 0
+		Notif.Position = UDim2.new(0.698148131, 0, 0.91481483, 0)
+		Notif.Size = UDim2.new(0, 298, 0, 51)
+		Utils.CreateCorner(Notif, CORNER_RADIUS)
+		
+		local Title = Instance.new("TextLabel")
+		Title.Name = "Title"
+		Title.Parent = Notif
+		Title.BackgroundTransparency = 1
+		Title.BorderSizePixel = 0
+		Title.Position = UDim2.new(0.0449179821, 0, 0.156111494, 0)
+		Title.Size = UDim2.new(0, 310, 0, 17)
+		Title.Font = Enum.Font.SourceSansSemibold
+		Title.Text = titleText or "Title"
+		Title.TextColor3 = Color3.new(1, 1, 1)
+		Title.TextSize = 16
+		Title.TextXAlignment = Enum.TextXAlignment.Left
+		
+		local Description = Instance.new("TextLabel")
+		Description.Name = "Description"
+		Description.Parent = Notif
+		Description.BackgroundTransparency = 1
+		Description.BorderSizePixel = 0
+		Description.Position = UDim2.new(0.0432063378, 0, 0.502512991, 0)
+		Description.Size = UDim2.new(0, 301, 0, 17)
+		Description.Font = Enum.Font.SourceSans
+		Description.Text = message or ""
+		Description.TextColor3 = Color3.new(1, 1, 1)
+		Description.TextSize = 14
+		Description.TextXAlignment = Enum.TextXAlignment.Left
+		
+		NotificationState.LastSendTime = tick()
+		NotificationState.ActiveCount += 1
+		
+		task.delay(NotificationSettings.MessageLifetime, function()
+			if Notif.Parent then
+				Utils.Tween(Notif, { Position = UDim2.new(FADE_OUT_X_POSITION, FADE_OUT_OFFSET, 0, 0), BackgroundTransparency = 1 }, TWEEN_DURATION, Enum.EasingStyle.Quart):Play()
+				Utils.Tween(Title, { TextTransparency = 1 }, TWEEN_DURATION, Enum.EasingStyle.Quart):Play()
+				Utils.Tween(Description, { TextTransparency = 1 }, TWEEN_DURATION, Enum.EasingStyle.Quart):Play()
+				task.wait(TWEEN_DURATION)
+				Notif:Destroy()
+				NotificationState.ActiveCount -= 1
+			end
+		end)
+	end
+	
+	local function SendVR(message, titleText)
+		if VRService.VREnabled and not VREnabled then
+			if not ErrorNotifSent then
+				ErrorNotifSent = true
+				SendPC(VRErrorReason or "VR setup failed", "Notification Launch Error")
+			end
+			SendPC(message, titleText)
+			return
+		end
+		
+		if not (NotificationSettings.Enabled and VRService.VREnabled and VREnabled) then 
+			return 
+		end
+		if tick() - NotificationState.LastSendTime < NotificationSettings.Cooldown then return end
+		
+		NotificationState.LastSendTime = tick()
+		NotificationState.ActiveCount += 1
+		table.insert(NotificationState.Queue, { text = message, time = tick() })
+		
+		if not isVRUpdateBound then
+			isVRUpdateBound = true
+			RunService:BindToRenderStep("UpdateVRNotifications", 1, UpdateVR)
+		end
+		
+		UpdateVR()
+	end
+	
+	if VRService.VREnabled and LocalHead then
+		local success, errorMsg = pcall(function()
+			VrPart = Instance.new("Part")
+			VrPart.Anchored = false
+			VrPart.CanCollide = false
+			VrPart.CanQuery = false
+			VrPart.CanTouch = false
+			VrPart.Massless = true
+			VrPart.Transparency = 1
+			VrPart.Size = NotificationSettings.SizeVR
+			VrPart.Parent = workspace
+			
+			VrGui = Instance.new("SurfaceGui")
+			VrGui.Face = Enum.NormalId.Back
+			VrGui.Adornee = VrPart
+			VrGui.AlwaysOnTop = true
+			VrGui.Parent = VrPart
+			
+			VrText = Instance.new("TextLabel")
+			VrText.BackgroundTransparency = 1
+			VrText.TextColor3 = NotificationSettings.TextColor
+			VrText.Font = NotificationSettings.Font
+			VrText.TextSize = NotificationSettings.TextSizeVR
+			VrText.Size = UDim2.new(1, 0, 1, 0)
+			VrText.TextYAlignment = Enum.TextYAlignment.Top
+			VrText.Visible = false
+			VrText.Parent = VrGui
+			
+			VrPart.CFrame = LocalHead.CFrame * CFrame.new(NotificationSettings.VROffset)
+			local Weld = Instance.new("Weld")
+			Weld.Name = "NotifWeld"
+			Weld.Part0 = LocalHead
+			Weld.Part1 = VrPart
+			Weld.C1 = CFrame.new(0, NotificationSettings.SpacingVR, 1)
+			Weld.Parent = VrPart
+			VrPart.CFrame = CFrame.new(VrPart.Position, LocalHead.Position)
+			
+			VREnabled = true
+		end)
+		
+		if not success then
+			warn("VR Notification Setup Failed:", tostring(errorMsg))
+			VRErrorReason = tostring(errorMsg)
+			VREnabled = false
+		end
+	elseif VRService.VREnabled and not LocalHead then
+		VRErrorReason = "LocalHead not found"
+		warn("VR Notification Setup Failed:", VRErrorReason)
+		VREnabled = false
+	end
+	
+	local pcSuccess, pcError = pcall(function()
+		PcGui = Instance.new("ScreenGui")
+		PcGui.IgnoreGuiInset = true
+		PcGui.Parent = Cgui
+		
+		PcFrame = Instance.new("Frame")
+		PcFrame.BackgroundTransparency = 1
+		PcFrame.Size = UDim2.new(0, 320, 0, 300 + 70 * NotificationSettings.MaxNotifications)
+		PcFrame.AnchorPoint = Vector2.new(1, 1)
+		PcFrame.Position = UDim2.new(0.98, 0, 0.98, 0)
+		PcFrame.Parent = PcGui
+		
+		local PcList = Instance.new("UIListLayout")
+		PcList.Padding = UDim.new(0, NotificationSettings.SpacingPC)
+		PcList.SortOrder = Enum.SortOrder.LayoutOrder
+		PcList.VerticalAlignment = Enum.VerticalAlignment.Bottom
+		PcList.HorizontalAlignment = Enum.HorizontalAlignment.Right
+		PcList.Parent = PcFrame
+	end)
+	
+	if not pcSuccess then
+		warn("PC Notification Setup Failed:", tostring(pcError))
+	end
+	
+	return {
+		SendNotification = function(message, titleText)
+			if VRService.VREnabled then
+				SendVR(message, titleText)
+			else
+				SendPC(message, titleText)
+			end
+		end,
+		ClearNotifications = function()
+			for _, child in ipairs(PcFrame:GetChildren()) do
+				if child:IsA("Frame") then
+					child:Destroy()
+				end
+			end
+		end,
+		GetNotificationSettings = function()
+			return NotificationSettings
+		end
+	}
 end
 
---// VR Setup
-if VRService.VREnabled and LocalHead then
-	VrPart.CFrame = LocalHead.CFrame * CFrame.new(NotificationSettings.VROffset)
-	local Weld = Instance.new("Weld")
-	Weld.Name = "NotifWeld"
-	Weld.Part0 = LocalHead
-	Weld.Part1 = VrPart
-	Weld.C1 = CFrame.new(0, NotificationSettings.SpacingVR, 1)
-	Weld.Parent = VrPart
-	VrPart.CFrame = CFrame.new(VrPart.Position, LocalHead.Position)
-	VrText.Visible = NotificationSettings.Enabled
-else
-	VrText.Visible = false
+if not existingInstance then
+	_G.Stack_NotificationsLibrary = Init()
 end
 
-if VRService.VREnabled then
-	RunService:BindToRenderStep("UpdateVRNotifications", 1, UpdateVR)
-end
-
-return NotificationModule
+notifications = _G.Stack_NotificationsLibrary
+return notifications
