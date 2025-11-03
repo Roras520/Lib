@@ -13,13 +13,21 @@ local function Init()
 	local VRService = game:GetService("VRService")
 	local RunService = game:GetService("RunService")
 	
-	local utilsLoaded, Utils = pcall(function()
-		return loadstring(game:HttpGet("https://raw.githubusercontent.com/Number2189/UI/refs/heads/main/Utils"))()
-	end)
+	local Utils = {}
+	Utils.createCorner = function(parent, radius)
+		if not parent then return nil end
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0, radius or 8)
+		corner.Parent = parent
+		return corner
+	end
 	
-	if not utilsLoaded then
-		warn("Failed to load Utils:", Utils)
-		return nil
+	Utils.tween = function(object, properties, duration, style, direction)
+		if not object or not properties then return nil end
+		duration = duration or 0.2
+		style = style or Enum.EasingStyle.Quad
+		direction = direction or Enum.EasingDirection.Out
+		return TweenService:Create(object, TweenInfo.new(duration, style, direction), properties)
 	end
 	
 	local LocalPlayer = Players.LocalPlayer
@@ -106,7 +114,7 @@ local function Init()
 		Notif.BorderSizePixel = 0
 		Notif.Position = UDim2.new(0.698148131, 0, 0.91481483, 0)
 		Notif.Size = UDim2.new(0, 298, 0, 51)
-		Utils.CreateCorner(Notif, CORNER_RADIUS)
+		Utils.createCorner(Notif, CORNER_RADIUS)
 		
 		local Title = Instance.new("TextLabel")
 		Title.Name = "Title"
@@ -139,9 +147,9 @@ local function Init()
 		
 		task.delay(NotificationSettings.MessageLifetime, function()
 			if Notif.Parent then
-				Utils.Tween(Notif, { Position = UDim2.new(FADE_OUT_X_POSITION, FADE_OUT_OFFSET, 0, 0), BackgroundTransparency = 1 }, TWEEN_DURATION, Enum.EasingStyle.Quart):Play()
-				Utils.Tween(Title, { TextTransparency = 1 }, TWEEN_DURATION, Enum.EasingStyle.Quart):Play()
-				Utils.Tween(Description, { TextTransparency = 1 }, TWEEN_DURATION, Enum.EasingStyle.Quart):Play()
+				Utils.tween(Notif, { Position = UDim2.new(FADE_OUT_X_POSITION, FADE_OUT_OFFSET, 0, 0), BackgroundTransparency = 1 }, TWEEN_DURATION, Enum.EasingStyle.Quart):Play()
+				Utils.tween(Title, { TextTransparency = 1 }, TWEEN_DURATION, Enum.EasingStyle.Quart):Play()
+				Utils.tween(Description, { TextTransparency = 1 }, TWEEN_DURATION, Enum.EasingStyle.Quart):Play()
 				task.wait(TWEEN_DURATION)
 				Notif:Destroy()
 				NotificationState.ActiveCount -= 1
