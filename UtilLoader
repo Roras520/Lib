@@ -1,0 +1,78 @@
+local UtilitiesLoader = {}
+
+if _G.Stack_UtilLoaderRan then
+	return _G.Stack_UtilLoader
+end
+
+_G.Stack_UtilLoaderRan = true
+
+local ModuleHolder = Instance.new("Folder", game.ReplicatedStorage)
+ModuleHolder.Name = "Stack_Utilities"
+
+local UtilityModules = {
+	{Name = "UtilityFunctions", SrcUrl = "https://raw.githubusercontent.com/Number2189/UI/refs/heads/main/Utils"},
+	{Name = "Acrylic", SrcUrl = "https://raw.githubusercontent.com/Number2189/UI/refs/heads/main/AcrylicBlur"},
+	{Name = "Notifications", SrcUrl = "https://raw.githubusercontent.com/Roras520/Lib/refs/heads/main/Notifications"},
+	{Name = "ConfigManager", SrcUrl = "https://raw.githubusercontent.com/Roras520/Lib/refs/heads/main/ConfigManager"},
+	{Name = "LoopManager", SrcUrl = "https://raw.githubusercontent.com/Number2189/UI/refs/heads/main/MainLoopModule"},
+	{Name = "EspModule", SrcUrl = "https://raw.githubusercontent.com/Roras520/Lib/refs/heads/main/espmodule"}
+}
+
+local LoadedModules = {}
+
+function UtilitiesLoader.FindModule(name)
+	for _, module in ipairs(UtilityModules) do
+		if module.Name == name then
+			return module
+		end
+	end
+	return nil
+end
+
+function UtilitiesLoader.LoadModule(name)
+	if LoadedModules[name] then
+		return LoadedModules[name]
+	end
+
+	local moduleInfo = UtilitiesLoader.FindModule(name)
+	if not moduleInfo then
+		return nil, "Module not found: " .. name
+	end
+
+	local success, src = pcall(function()
+		return game:HttpGet(moduleInfo.SrcUrl)
+	end)
+
+	if not success then
+		return nil, "Failed to fetch module: " .. src
+	end
+
+	local moduleScript = Instance.new("ModuleScript")
+	moduleScript.Name = name
+	moduleScript.Parent = ModuleHolder
+	moduleScript.Source = src
+
+	local requireSuccess, result = pcall(function()
+		return require(moduleScript)
+	end)
+
+	if not requireSuccess then
+		moduleScript:Destroy()
+		return nil, "Failed to require module: " .. result
+	end
+
+	LoadedModules[name] = result
+	return result
+end
+
+function UtilitiesLoader.LoadAll()
+	local results = {}
+	for _, moduleInfo in ipairs(UtilityModules) do
+		local module, err = UtilitiesLoader.LoadModule(moduleInfo.Name)
+		results[moduleInfo.Name] = {success = module ~= nil, module = module, error = err}
+	end
+	return results
+end
+
+_G.Stack_UtilLoader = UtilitiesLoader
+return UtilitiesLoader
