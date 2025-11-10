@@ -6,31 +6,16 @@ local VRService = game:GetService("VRService")
 local Config = {
     -- States
 	EspEnabled = true,
-    BoxesOn = false,
 	NamesOn = false,
 	ChamsOn = false,
 	DotsOn = false,
 	HealthBarOn = false,
 	DistanceOn = false,
-	PulseEnabled = false,
-	RainbowEnabled = false,
 
     -- Colors
 	ChamsColor = Color3.fromRGB(0, 170, 255),
-	ChamsOutlineColor = Color3.fromRGB(0, 85, 128),
-	ChamsFillTransparency = 0.6,
-	ChamsOutlineTransparency = 0.36,
-	BoxTransparency = 0.39,
-	DotTransparency = 0.4,
-	BespColor = Color3.fromRGB(0, 170, 255),
 	DespColor = Color3.fromRGB(0, 170, 255),
-	NespColor = Color3.fromRGB(0, 170, 255),
-	RLineColor = Color3.new(1, 0, 0),
-	LLineColor = Color3.new(1, 0, 0),
-	PulsePrimaryColor = Color3.fromRGB(0, 170, 255),
-	PulseSecondaryColor = Color3.fromRGB(0, 255, 170),
-	PulseSpeed = 1,
-	RainbowSpeed = 1
+	NespColor = Color3.fromRGB(0, 170, 255)
 }
 
 local LocalPlayer = Players.LocalPlayer
@@ -54,312 +39,216 @@ end
 
 -- ESP Functions
 function CreateChamsHighlight(Character)
-    local Player = game.Players:GetPlayerFromCharacter(Character)
-    if not Player then return end
-
-    local isTraitor = false
-    if workspace:FindFirstChild("PowerUps") then
-        isTraitor = (Player:GetAttribute("ModeTeam") == "Traitor")
-    elseif LocalPlayer.Team and Player.Team then
-        isTraitor = (LocalPlayer.Team.Name ~= Player.Team.Name)
-    end
-
-    local ChamsFillColor, ChamsOutlineColor
-    if isTraitor then
-        ChamsFillColor = Color3.fromRGB(255, 0, 0)
-        ChamsOutlineColor = Color3.fromRGB(255, 0, 0)
-    else
-        ChamsFillColor = Config.ChamsColor or Color3.fromRGB(0, 170, 255)
-        ChamsOutlineColor = Config.ChamsOutlineColor or Color3.fromRGB(0, 85, 128)
-    end
-    local ChamsFillTransparency = Config.ChamsFillTransparency or 0.6
-    local ChamsOutlineTransparency = Config.ChamsOutlineTransparency or 0.36
-
-    local Existing = Character:FindFirstChild("chamshighlight")
-    if Existing then
-        Existing.FillColor = ChamsFillColor
-        Existing.OutlineColor = ChamsOutlineColor
-        Existing.FillTransparency = ChamsFillTransparency
-        Existing.OutlineTransparency = ChamsOutlineTransparency
-        return
-    end
-
-    local Highlight = Instance.new("Highlight")
-    Highlight.Name = "chamshighlight"
-    Highlight.Adornee = Character
-    Highlight.FillColor = ChamsFillColor
-    Highlight.FillTransparency = ChamsFillTransparency
-    Highlight.OutlineColor = ChamsOutlineColor
-    Highlight.OutlineTransparency = ChamsOutlineTransparency
-    Highlight.Parent = Character
-end
-
-function CreateMainEspGui(Character)
-	local Part = Character:FindFirstChild("Torso") or Character:FindFirstChild("HumanoidRootPart") or Character.PrimaryPart
-	if not Part then return nil end
-	
-	local Existing = Part:FindFirstChild("espmain")
-	if Existing then return Existing end
-	
-	local Billboard = Instance.new("BillboardGui", Part)
-	Billboard.Name = "espmain"
-	Billboard.Adornee = Part
-	Billboard.Size = UDim2.new(4, 0, 7, 0)
-	Billboard.StudsOffset = Vector3.new(0, 4.4, 0)
-	Billboard.AlwaysOnTop = true
-	
-	local Container = Instance.new("Frame", Billboard)
-	Container.Name = "Container"
-	Container.BackgroundTransparency = 1
-	Container.Size = UDim2.new(1, 0, 1, 0)
-	
-	return Billboard
-end
-
-function CreateBoxEsp(Character)
 	local Player = game.Players:GetPlayerFromCharacter(Character)
-	local BoxEspColor = ColorCheck(Player, RedC, Config.BespColor)
-	
-	local MainGui = CreateMainEspGui(Character)
-	if not MainGui then return end
-	
-	local Container = MainGui:FindFirstChild("Container")
-	local Existing = Container:FindFirstChild("BoxFrame")
-	
+	local ChamsColor = ColorCheck(Player, RedC, Config.ChamsColor)
+	local ChamsOutlineColor = ColorMinus(ChamsColor, 15)
+	if not Player then return end
+
+	local Existing = Character:FindFirstChild("chamshighlight")
 	if Existing then
-		local Stroke = Existing:FindFirstChild("UIStroke")
-		if Stroke then
-			Stroke.Color = BoxEspColor
-			Stroke.Transparency = Config.BoxTransparency
-		end
-		Existing.Visible = Config.BoxesOn
+		Existing.FillColor = ChamsColor
 		return
 	end
-	
-	local Frame = Instance.new("Frame", Container)
-	Frame.Name = "BoxFrame"
-	Frame.BackgroundTransparency = 1
-	Frame.Size = UDim2.new(1, 0, 0.714, 0)
-	Frame.Position = UDim2.new(0, 0, 0.286, 0)
-	Frame.Visible = Config.BoxesOn
-	
-	local Stroke = Instance.new("UIStroke", Frame)
-	Stroke.Thickness = 1.67
-	Stroke.Transparency = Config.BoxTransparency
-	Stroke.Color = BoxEspColor
+
+	local Highlight = Instance.new("Highlight")
+	Highlight.Name = "chamshighlight"
+	Highlight.Adornee = Character
+	Highlight.FillColor = ChamsColor
+	Highlight.FillTransparency = 0.6
+	Highlight.OutlineColor = ChamsOutlineColor
+	Highlight.OutlineTransparency = 0.36
+	Highlight.Parent = Character
 end
+
 
 function CreateDotEsp(Character)
 	local Part = Character:FindFirstChild("Torso") or Character:FindFirstChild("HumanoidRootPart") or Character:FindFirstChild("Root")
 	local Player = game.Players:GetPlayerFromCharacter(Character)
 	local DotEspColor = ColorCheck(Player, RedC, Config.DespColor)
-	
-	if not Part then return end
-	
-	local MainGui = CreateMainEspGui(Character)
-	if not MainGui then return end
-	
-	local Container = MainGui:FindFirstChild("Container")
-	local Existing = Container:FindFirstChild("DotFrame")
-	
-	if Existing then
-		Existing.BackgroundColor3 = DotEspColor
-		Existing.Transparency = Config.DotTransparency
-		Existing.Visible = Config.DotsOn
+	if not Part then
 		return
 	end
 
-	local Dotf = Instance.new("Frame", Container)
-	Dotf.Name = "DotFrame"
+	if Part:FindFirstChild("dotespbg") then
+		local Dotf = Part:FindFirstChild("dotespbg"):FindFirstChild("dotf")
+		if Dotf then
+			Dotf.BackgroundColor3 = DotEspColor
+		end
+		return
+	end
+
+	local Billboard = Instance.new("BillboardGui", Part)
+	Billboard.Name = "dotespbg"
+	Billboard.Adornee = Part
+	Billboard.StudsOffset = Vector3.new(0, 0.4, 0)
+	Billboard.Size = UDim2.new(0.1, 5, 0.1, 5)
+	Billboard.AlwaysOnTop = true
+	Billboard.Enabled = true
+
+	local Dotf = Instance.new("Frame", Billboard)
+	Dotf.Name = "dotf"
 	Dotf.BackgroundColor3 = DotEspColor
-	Dotf.Size = UDim2.new(0.1, 0, 0.1, 0)
-	Dotf.Position = UDim2.new(0.45, 0, 0.5, 0)
-	Dotf.Transparency = Config.DotTransparency
+	Dotf.Size = UDim2.new(1, 0, 1, 0)
+	Dotf.Transparency = 0.4
 	Dotf.BorderSizePixel = 0
-	Dotf.Visible = Config.DotsOn
 
 	local Dotc = Instance.new("UICorner", Dotf)
 	Dotc.CornerRadius = UDim.new(0.45, 0)
 end
 
-function CreateNameEsp(Character)
-	local Head = Character:FindFirstChild("Head")
-	if not Head or not Head.Parent then return end
-	
-	local Player = game.Players:GetPlayerFromCharacter(Character)
+function CreateNameEsp(Head)
+	local Player = game.Players:GetPlayerFromCharacter(Head.Parent)
 	local NameEspColor = ColorCheck(Player, RedC, Config.NespColor)
+	local Existing = Head:FindFirstChild("nameesp")
 	
-	local MainGui = CreateMainEspGui(Character)
-	if not MainGui then return end
+	local Character = Head.Parent
+	local LocalHead = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")
+	local Distance = LocalHead and math.floor((Head.Position - LocalHead.Position).Magnitude) or 0
 	
-	local Container = MainGui:FindFirstChild("Container")
-	local Existing = Container:FindFirstChild("NameLabel")
+	local NameText = Player.Name and Player.Name:upper() or ""
+	if Config.DistanceOn then
+		NameText = NameText .. " - [" .. tostring(Distance) .. "]"
+	end
 	
 	if Existing then
-		Existing.TextColor3 = NameEspColor
-		Existing.Visible = Config.NamesOn
+		local NameLabel = Existing:FindFirstChild("NAME")
+		if NameLabel then
+			NameLabel.TextColor3 = NameEspColor
+			NameLabel.Text = NameText
+		end
 		return
 	end
 	
-	local Namel = Instance.new("TextLabel", Container)
-	Namel.Name = "NameLabel"
-	Namel.Size = UDim2.new(1, 0, 0.143, 0)
-	Namel.Position = UDim2.new(0, 0, 0, 0)
+	local Nespbgui = Instance.new("BillboardGui")
+	Nespbgui.Name = "nameesp"
+	Nespbgui.Adornee = Head
+	Nespbgui.AlwaysOnTop = true
+	Nespbgui.ExtentsOffset = Vector3.new(0, 4, 0)
+	Nespbgui.Size = UDim2.new(0, 200, 0, 20)
+	Nespbgui.Parent = Head
+	
+	local Namel = Instance.new("TextLabel", Nespbgui)
+	Namel.Size = UDim2.new(1, 0, 0.3, 0)
+	Namel.Name = "NAME"
 	Namel.BorderSizePixel = 0
 	Namel.BackgroundTransparency = 1
-	Namel.Text = Player.Name and Player.Name:upper() or ""
+	Namel.Text = NameText
 	Namel.TextColor3 = NameEspColor
 	Namel.TextStrokeTransparency = 0.5
 	Namel.Font = Enum.Font.SourceSansBold
-	Namel.TextSize = VRService.VREnabled and 11 or 14
-	Namel.Visible = Config.NamesOn
+	Namel.TextSize = VRService.VREnabled and 11 or not VRService.VREnabled and 14
 end
 
 function CreateHealthBar(Character)
-	local Part = Character:FindFirstChild("Torso") or Character:FindFirstChild("HumanoidRootPart")
-	local Humanoid = Character:FindFirstChild("Humanoid") or Character:FindFirstChild("VRHealth")
+	local Player = game.Players:GetPlayerFromCharacter(Character)
+	local Head = Character:FindFirstChild("Head")
+	if not Head then return end
 	
-	if not Part then return end
-	
-	local MainGui = CreateMainEspGui(Character)
-	if not MainGui then return end
-	
-	local Container = MainGui:FindFirstChild("Container")
-	local Existing = Container:FindFirstChild("HealthBar")
-	
+	local Existing = Head:FindFirstChild("healthbar")
 	if Existing then
-		if Config.HealthBarOn and Humanoid then
-			local HealthFill = Existing:FindFirstChild("Fill")
-			if HealthFill then
-				local healthPercent = Humanoid:IsA("Humanoid") and (Humanoid.Health / Humanoid.MaxHealth) or (Humanoid.Value / 100)
-				HealthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
-				HealthFill.BackgroundColor3 = Color3.fromRGB(255 * (1 - healthPercent), 255 * healthPercent, 0)
+		local HealthBarBg = Existing:FindFirstChild("HealthBarBg")
+		if HealthBarBg then
+			local HealthBar = HealthBarBg:FindFirstChild("HealthBar")
+			local HealthLabel = HealthBarBg:FindFirstChild("HealthLabel")
+			if HealthBar and HealthLabel then
+				local Humanoid = Character:FindFirstChild("Humanoid")
+				if Humanoid then
+					local HealthPercent = math.clamp(Humanoid.Health / Humanoid.MaxHealth, 0, 1)
+					HealthBar.Size = UDim2.new(HealthPercent, 0, 1, 0)
+					HealthLabel.Text = math.floor(Humanoid.Health) .. "/" .. math.floor(Humanoid.MaxHealth)
+					
+					if HealthPercent > 0.5 then
+						HealthBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+					elseif HealthPercent > 0.25 then
+						HealthBar.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+					else
+						HealthBar.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+					end
+				end
 			end
-			Existing.BackgroundTransparency = 0
-			Existing.Visible = true
-		else
-			Existing.BackgroundTransparency = 1
-			Existing.Visible = false
 		end
 		return
 	end
 	
-	local HealthBar = Instance.new("Frame", Container)
+	local HealthBarGui = Instance.new("BillboardGui")
+	HealthBarGui.Name = "healthbar"
+	HealthBarGui.Adornee = Head
+	HealthBarGui.AlwaysOnTop = true
+	HealthBarGui.ExtentsOffset = Vector3.new(0, 3.5, 0)
+	HealthBarGui.Size = UDim2.new(0, 100, 0, 8)
+	HealthBarGui.Parent = Head
+	
+	local HealthBarBg = Instance.new("Frame", HealthBarGui)
+	HealthBarBg.Name = "HealthBarBg"
+	HealthBarBg.Size = UDim2.new(1, 0, 1, 0)
+	HealthBarBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	HealthBarBg.BorderSizePixel = 1
+	HealthBarBg.BorderColor3 = Color3.fromRGB(60, 60, 60)
+	
+	local HealthBar = Instance.new("Frame", HealthBarBg)
 	HealthBar.Name = "HealthBar"
-	HealthBar.Size = UDim2.new(0.75, 0, 0.057, 0)
-	HealthBar.Position = UDim2.new(0.125, 0, 0.143, 0)
-	HealthBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	HealthBar.Size = UDim2.new(1, 0, 1, 0)
+	HealthBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
 	HealthBar.BorderSizePixel = 0
-	HealthBar.BackgroundTransparency = Config.HealthBarOn and 0 or 1
-	HealthBar.Visible = Config.HealthBarOn
 	
-	local HealthBarCorner = Instance.new("UICorner", HealthBar)
-	HealthBarCorner.CornerRadius = UDim.new(0, 3)
-	
-	local Fill = Instance.new("Frame", HealthBar)
-	Fill.Name = "Fill"
-	Fill.Size = UDim2.new(1, 0, 1, 0)
-	Fill.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
-	Fill.BorderSizePixel = 0
-	
-	local FillCorner = Instance.new("UICorner", Fill)
-	FillCorner.CornerRadius = UDim.new(0, 3)
-	
-	if Config.HealthBarOn and Humanoid then
-		local healthPercent = Humanoid:IsA("Humanoid") and (Humanoid.Health / Humanoid.MaxHealth) or (Humanoid.Value / 100)
-		Fill.Size = UDim2.new(healthPercent, 0, 1, 0)
-		Fill.BackgroundColor3 = Color3.fromRGB(255 * (1 - healthPercent), 255 * healthPercent, 0)
-	end
-end
-
-function CreateDistanceDisplay(Character)
-	local Part = Character:FindFirstChild("Torso") or Character:FindFirstChild("HumanoidRootPart")
-	if not Part then return end
-	
-	local MainGui = CreateMainEspGui(Character)
-	if not MainGui then return end
-	
-	local Container = MainGui:FindFirstChild("Container")
-	local Existing = Container:FindFirstChild("DistanceText")
-	
-	if Existing then
-		if Config.DistanceOn and LocalPlayer.Character then
-			local localTorso = LocalPlayer.Character:FindFirstChild("Torso") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-			if localTorso then
-				local distance = math.floor((localTorso.Position - Part.Position).Magnitude)
-				Existing.Text = "[" .. tostring(distance) .. "]"
-			end
-		end
-		Existing.BackgroundTransparency = 1
-		Existing.Visible = Config.DistanceOn
-		return
-	end
-	
-	local DistLabel = Instance.new("TextLabel", Container)
-	DistLabel.Name = "DistanceText"
-	DistLabel.Size = UDim2.new(1, 0, 0.143, 0)
-	DistLabel.Position = UDim2.new(0, 0, 0.143, 0)
-	DistLabel.BackgroundTransparency = 1
-	DistLabel.Text = "[0]"
-	DistLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	DistLabel.TextStrokeTransparency = 0.5
-	DistLabel.Font = Enum.Font.RobotoMono
-	DistLabel.TextSize = VRService.VREnabled and 10 or 12
-	DistLabel.Visible = Config.DistanceOn
-	
-	if Config.DistanceOn and LocalPlayer.Character then
-		local localTorso = LocalPlayer.Character:FindFirstChild("Torso") or LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-		if localTorso then
-			local distance = math.floor((localTorso.Position - Part.Position).Magnitude)
-			DistLabel.Text = "[" .. tostring(distance) .. "]"
+	local Humanoid = Character:FindFirstChild("Humanoid")
+	if Humanoid then
+		local HealthPercent = math.clamp(Humanoid.Health / Humanoid.MaxHealth, 0, 1)
+		HealthBar.Size = UDim2.new(HealthPercent, 0, 1, 0)
+		
+		if HealthPercent > 0.5 then
+			HealthBar.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+		elseif HealthPercent > 0.25 then
+			HealthBar.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+		else
+			HealthBar.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 		end
 	end
+	
+	local HealthLabel = Instance.new("TextLabel", HealthBarBg)
+	HealthLabel.Name = "HealthLabel"
+	HealthLabel.Size = UDim2.new(1, 0, 1, 0)
+	HealthLabel.BackgroundTransparency = 1
+	HealthLabel.Text = Humanoid and (math.floor(Humanoid.Health) .. "/" .. math.floor(Humanoid.MaxHealth)) or "0/100"
+	HealthLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	HealthLabel.TextStrokeTransparency = 0.5
+	HealthLabel.Font = Enum.Font.SourceSansBold
+	HealthLabel.TextSize = 8
 end
 
-function ClearEsp(Type)
+function ClearEsp(Bncd)
 	if not LocalPlayer then
 		return
 	end
 	for _, Plr in pairs(game.Players:GetPlayers()) do
 		if Plr.Name ~= LocalPlayer.Name and Plr.Character then
-			local Part = Plr.Character:FindFirstChild("Torso") or Plr.Character:FindFirstChild("HumanoidRootPart") or Plr.Character.PrimaryPart
-			if Part then
-				local MainGui = Part:FindFirstChild("espmain")
-				if MainGui then
-					local Container = MainGui:FindFirstChild("Container")
-					if Container then
-						if Type == 1 then
-							local BoxFrame = Container:FindFirstChild("BoxFrame")
-							if BoxFrame then
-								BoxFrame.Visible = false
-							end
-						elseif Type == 2 then
-							local NameLabel = Container:FindFirstChild("NameLabel")
-							if NameLabel then
-								NameLabel.Visible = false
-							end
-						elseif Type == 3 then
-							local Chamsesp = Plr.Character:FindFirstChild("chamshighlight")
-							if Chamsesp then
-								Chamsesp:Destroy()
-							end
-						elseif Type == 4 then
-							local DotFrame = Container:FindFirstChild("DotFrame")
-							if DotFrame then
-								DotFrame.Visible = false
-							end
-						elseif Type == 5 then
-							local HealthBar = Container:FindFirstChild("HealthBar")
-							if HealthBar then
-								HealthBar.BackgroundTransparency = 1
-								HealthBar.Visible = false
-							end
-						elseif Type == 6 then
-							local DistanceText = Container:FindFirstChild("DistanceText")
-							if DistanceText then
-								DistanceText.Visible = false
-							end
-						end
+			if Bncd == 2 then
+				local Head = Plr.Character:FindFirstChild("Head")
+				if Head then
+					local Nesp = Head:FindFirstChild("nameesp")
+					if Nesp then
+						Nesp:Destroy()
+					end
+				end
+			elseif Bncd == 3 then
+				local Chamsesp = Plr.Character:FindFirstChild("chamshighlight")
+				if Chamsesp then
+					Chamsesp:Destroy()
+				end
+			elseif Bncd == 4 then
+				local Torso = Plr.Character:FindFirstChild("Torso") or Plr.Character:FindFirstChild("HumanoidRootPart")
+				if Torso then
+					local Dotesp = Torso:FindFirstChild("dotespbg")
+					if Dotesp then
+						Dotesp:Destroy()
+					end
+				end
+			elseif Bncd == 5 then
+				local Head = Plr.Character:FindFirstChild("Head")
+				if Head then
+					local HealthBar = Head:FindFirstChild("healthbar")
+					if HealthBar then
+						HealthBar:Destroy()
 					end
 				end
 			end
@@ -368,103 +257,19 @@ function ClearEsp(Type)
 end
 
 local LastEspUpdate = 0
-local RainbowHue = 0
 function UpdateAllEsp()
 	if not Config.EspEnabled then return end
 	local CT = tick()
-	
-	if Config.RainbowEnabled then
-		RainbowHue = (RainbowHue + (0.01 * Config.RainbowSpeed)) % 1
-	end
-	
-	for _, Plr in pairs(game.Players:GetPlayers()) do
-		if Plr.Name ~= LocalPlayerName and Plr.Character then
-			CreateBoxEsp(Plr.Character)
-			CreateNameEsp(Plr.Character)
-			if Config.ChamsOn then CreateChamsHighlight(Plr.Character) end
-			CreateDotEsp(Plr.Character)
-			CreateHealthBar(Plr.Character)
-			CreateDistanceDisplay(Plr.Character)
+	if CT - LastEspUpdate >= 0.1 then
+		for _, Plr in pairs(game.Players:GetPlayers()) do
+			if Plr.Name ~= LocalPlayerName and Plr.Character then
+				if Config.NamesOn then CreateNameEsp(Plr.Character:FindFirstChild("Head")) end
+				if Config.HealthBarOn then CreateHealthBar(Plr.Character) end
+				if Config.ChamsOn then CreateChamsHighlight(Plr.Character) end
+				if Config.DotsOn then CreateDotEsp(Plr.Character) end
+			end
 		end
-	end
-	
-	if CT - LastEspUpdate >= 2 then
 		LastEspUpdate = CT
-	end
-	
-	if Config.PulseEnabled then
-		ApplyPulseEffect()
-	end
-	
-	if Config.RainbowEnabled then
-		ApplyRainbowEffect()
-	end
-end
-
-function ApplyPulseEffect()
-	local pulseValue = (math.sin(tick() * Config.PulseSpeed * 2) + 1) / 2
-	local pulseColor = Config.PulsePrimaryColor:Lerp(Config.PulseSecondaryColor, pulseValue)
-	
-	for _, Plr in pairs(game.Players:GetPlayers()) do
-		if Plr.Name ~= LocalPlayerName and Plr.Character then
-			local Chams = Plr.Character:FindFirstChild("chamshighlight")
-			if Chams then
-				Chams.FillColor = pulseColor
-			end
-			
-			local Part = Plr.Character:FindFirstChild("Torso") or Plr.Character:FindFirstChild("HumanoidRootPart") or Plr.Character.PrimaryPart
-			if Part then
-				local MainGui = Part:FindFirstChild("espmain")
-				if MainGui then
-					local Container = MainGui:FindFirstChild("Container")
-					if Container then
-						local BoxFrame = Container:FindFirstChild("BoxFrame")
-						if BoxFrame then
-							local Stroke = BoxFrame:FindFirstChild("UIStroke")
-							if Stroke then
-								Stroke.Color = pulseColor
-							end
-						end
-					end
-				end
-			end
-		end
-	end
-end
-
-function ApplyRainbowEffect()
-	local rainbowColor = Color3.fromHSV(RainbowHue, 1, 1)
-	
-	for _, Plr in pairs(game.Players:GetPlayers()) do
-		if Plr.Name ~= LocalPlayerName and Plr.Character then
-			local Chams = Plr.Character:FindFirstChild("chamshighlight")
-			if Chams then
-				Chams.FillColor = rainbowColor
-				Chams.OutlineColor = rainbowColor
-			end
-			
-			local Part = Plr.Character:FindFirstChild("Torso") or Plr.Character:FindFirstChild("HumanoidRootPart") or Plr.Character.PrimaryPart
-			if Part then
-				local MainGui = Part:FindFirstChild("espmain")
-				if MainGui then
-					local Container = MainGui:FindFirstChild("Container")
-					if Container then
-						local BoxFrame = Container:FindFirstChild("BoxFrame")
-						if BoxFrame then
-							local Stroke = BoxFrame:FindFirstChild("UIStroke")
-							if Stroke then
-								Stroke.Color = rainbowColor
-							end
-						end
-						
-						local NameLabel = Container:FindFirstChild("NameLabel")
-						if NameLabel then
-							NameLabel.TextColor3 = rainbowColor
-						end
-					end
-				end
-			end
-		end
 	end
 end
 
@@ -485,10 +290,6 @@ EspModule.GetConfig = GetConfig
 EspModule.EditConfig = EditConfig
 EspModule.UpdateAllEsp = UpdateAllEsp
 EspModule.ClearEsp = ClearEsp
-EspModule.CreateChamsHighlight = CreateChamsHighlight
-EspModule.CreateBoxEsp = CreateBoxEsp
-EspModule.CreateDotEsp = CreateDotEsp
 EspModule.CreateHealthBar = CreateHealthBar
-EspModule.CreateDistanceDisplay = CreateDistanceDisplay
 
 return EspModule
