@@ -291,5 +291,8 @@ EspModule.EditConfig = EditConfig
 EspModule.UpdateAllEsp = UpdateAllEsp
 EspModule.ClearEsp = ClearEsp
 EspModule.CreateHealthBar = CreateHealthBar
+EspModule.CreateChamsHighlight = CreateChamsHighlight
+EspModule.CreateNameEsp = CreateNameEsp
+EspModule.CreateDotEsp = CreateDotEsp
 
 return EspModule
