@@ -14,8 +14,13 @@ local Config = {
 
     -- Colors
 	ChamsColor = Color3.fromRGB(0, 170, 255),
+	ChamsOutlineColor = Color3.fromRGB(0, 155, 240),
 	DespColor = Color3.fromRGB(0, 170, 255),
-	NespColor = Color3.fromRGB(0, 170, 255)
+	NespColor = Color3.fromRGB(0, 170, 255),
+	
+	-- Transparency
+	ChamsFillTransparency = 0.6,
+	ChamsOutlineTransparency = 0.36
 }
 
 local LocalPlayer = Players.LocalPlayer
@@ -41,12 +46,15 @@ end
 function CreateChamsHighlight(Character)
 	local Player = game.Players:GetPlayerFromCharacter(Character)
 	local ChamsColor = ColorCheck(Player, RedC, Config.ChamsColor)
-	local ChamsOutlineColor = ColorMinus(ChamsColor, 15)
+	local ChamsOutlineColor = Config.ChamsOutlineColor or ColorMinus(ChamsColor, 15)
 	if not Player then return end
 
 	local Existing = Character:FindFirstChild("chamshighlight")
 	if Existing then
 		Existing.FillColor = ChamsColor
+		Existing.OutlineColor = ChamsOutlineColor
+		Existing.FillTransparency = Config.ChamsFillTransparency or 0.6
+		Existing.OutlineTransparency = Config.ChamsOutlineTransparency or 0.36
 		return
 	end
 
@@ -54,9 +62,9 @@ function CreateChamsHighlight(Character)
 	Highlight.Name = "chamshighlight"
 	Highlight.Adornee = Character
 	Highlight.FillColor = ChamsColor
-	Highlight.FillTransparency = 0.6
+	Highlight.FillTransparency = Config.ChamsFillTransparency or 0.6
 	Highlight.OutlineColor = ChamsOutlineColor
-	Highlight.OutlineTransparency = 0.36
+	Highlight.OutlineTransparency = Config.ChamsOutlineTransparency or 0.36
 	Highlight.Parent = Character
 end
 
