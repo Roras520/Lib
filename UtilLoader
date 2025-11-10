@@ -6,9 +6,6 @@ end
 
 _G.Stack_UtilLoaderRan = true
 
-local ModuleHolder = Instance.new("Folder", game.ReplicatedStorage)
-ModuleHolder.Name = "Stack_Utilities"
-
 local UtilityModules = {
 	{Name = "UtilityFunctions", SrcUrl = "https://raw.githubusercontent.com/Number2189/UI/refs/heads/main/Utils"},
 	{Name = "Acrylic", SrcUrl = "https://raw.githubusercontent.com/Number2189/UI/refs/heads/main/AcrylicBlur"},
@@ -39,26 +36,12 @@ function UtilitiesLoader.LoadModule(name)
 		return nil, "Module not found: " .. name
 	end
 
-	local success, src = pcall(function()
-		return game:HttpGet(moduleInfo.SrcUrl)
+	local success, result = pcall(function()
+		return loadstring(game:HttpGet(moduleInfo.SrcUrl))()
 	end)
 
 	if not success then
-		return nil, "Failed to fetch module: " .. src
-	end
-
-	local moduleScript = Instance.new("ModuleScript")
-	moduleScript.Name = name
-	moduleScript.Parent = ModuleHolder
-	moduleScript.Source = src
-
-	local requireSuccess, result = pcall(function()
-		return require(moduleScript)
-	end)
-
-	if not requireSuccess then
-		moduleScript:Destroy()
-		return nil, "Failed to require module: " .. result
+		return nil, "Failed to load module: " .. result
 	end
 
 	LoadedModules[name] = result
